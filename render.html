@@ -1,0 +1,25 @@
+<!doctype html>
+<html lang="zh-CN">
+<head><meta charset="utf-8"><title>CaseMap 渲染画布</title></head>
+<body>
+  <canvas id="frame"></canvas>
+  <script src="project.js"></script>
+  <script src="engine.js"></script>
+  <script>
+    const canvas = document.getElementById('frame');
+    const renderer = new CaseMapEngine.Engine(canvas);
+    window.prepareScene = async function (data) {
+      const project = CaseMapProject.validate(data);
+      [canvas.width, canvas.height] = project.size;
+      renderer.setProject(project);
+      await Promise.all([document.fonts.ready, renderer.ready()]);
+    };
+    window.renderFrames = function (first, count, fps) {
+      return Array.from({length:count}, (_,i) => {
+        renderer.render((first+i)/fps);
+        return canvas.toDataURL('image/jpeg', .96).split(',')[1];
+      });
+    };
+  </script>
+</body>
+</html>
