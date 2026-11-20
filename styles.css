@@ -85,3 +85,4 @@ body.full-preview .motion-tools, body.full-preview .quick-tools, body.full-previ
   .track-strip { min-height:36px; }
   .track-marker::before { content:""; position:absolute; inset:-6px -10px; }
 }
+#routeDistance { color:#9fcfe4; align-self:center; font-size:12px; }

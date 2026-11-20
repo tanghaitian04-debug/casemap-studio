@@ -1,12 +1,12 @@
 (function (root) {
   'use strict';
-  const Motion=root.CaseMapMotion;
+  const Motion=root.CaseMapMotion,Geo=root.CaseMapGeo;
   function mount(api) {
     const $=id=>document.getElementById(id);
     const {canvas,engine}=api;
     const fingers=new Map();
     let mode='select', auto=false, gesture=null, draft=[], owner='', picked=null;
-    let activeTools, viewTime=null, raf=0;
+    let activeTools, viewTime=null, raf=0, locate=false;
     const say=text=>{$('motionStatus').textContent=text;};
     const active=()=>api.actor();
     const projection=(x,y)=>engine.screenToWorld(x,y,api.time());
@@ -43,11 +43,14 @@
       $('editNodes').setAttribute('aria-pressed',String(mode==='edit'));
       $('saveView').hidden=mode!=='pan';
       $('resetView').hidden=!engine.previewCamera;
+      $('pickLocation').hidden=!api.project().map.bounds;
+      $('pickLocation').setAttribute('aria-pressed',String(locate));
       for (const el of activeTools) el.setAttribute('aria-pressed',String(el.dataset.tool===mode));
       canvas.dataset.tool=mode;
+      if(a && routeMode()) distanceInfo();
     }
     function setMode(next) {
-      mode=next;
+      mode=next;locate=false;
       if (next==='draw' || next==='nodes') routeFields(active());
       sync();
       say({select:'点按或长按对象即可选择',move:auto?'拖动对象以记录当前位置':'打开自动关键帧后，松手记录位置',
@@ -116,6 +119,13 @@
         return;
       }
       if(fingers.size>1) return;
+      if(locate && api.project().map.bounds) {
+        const point=pointFor(pos);
+        const {lat,lon}=Geo.location(api.project().map.bounds,point.x,point.y);
+        api.saveLocation(+lat.toFixed(6),+lon.toFixed(6));
+        locate=false;sync();say('开场目标已更新 · '+lat.toFixed(5)+', '+lon.toFixed(5));
+        return;
+      }
       if(mode==='pan') { beginView(pos); return; }
       if(mode==='select') {
         const current=pickActor(pos);
@@ -211,7 +221,7 @@
         if(Motion.distance(draft.at(-1),p)>.001 && draft.length<100) draft.push(p);
         say('已添加 '+draft.length+' 个节点');
       }
-      sync(); api.render();
+      sync(); distanceInfo(); api.render();
     }
     function apply() {
       const a=active();
@@ -234,6 +244,14 @@
       api.seek(start);
       say('路线已保存 · '+a.points.length+' 个控制点，'+duration+' 秒');
     }
+    function distanceInfo() {
+      const bounds=api.project()?.map.bounds;
+      const points=draft.length?draft:Motion.sorted(active()?.points||[]);
+      const values=bounds&&points.map(p=>Geo.location(bounds,p.x,p.y));
+      if(!values || values.length<2){$('routeDistance').textContent='';return;}
+      const meters=values.slice(1).reduce((sum,p,i)=>sum+Geo.distance(values[i],p),0);
+      $('routeDistance').textContent='配准底图路程约 '+Math.round(meters).toLocaleString()+' 米';
+    }
     function overlays() {
       viewForTime();
       const item=gesture;
@@ -249,13 +267,16 @@
       const a=active(), i=a?.points.indexOf(picked);
       if(i>=0) {a.points.splice(i,1);picked=null;api.changed();}
     };
-    $('routeApply').onclick=apply;
+    $('routeApply').onclick=()=>{apply();distanceInfo();};
     $('routeCancel').onclick=()=>{draft=[];say('已清空路线草稿');api.render();};
     $('saveView').onclick=()=>{
       const view=engine.previewCamera;
       if(!view){say('请先在画布上调整构图');return;}
       api.saveCamera(view);
       clearView();sync();api.render();say('镜头已记录在 '+api.time().toFixed(2)+' 秒');
+    };
+    $('pickLocation').onclick=()=>{
+      locate=!locate;sync();say(locate?'点按底图设置开场落点':'已取消地图取点');
     };
     $('resetView').onclick=()=>{clearView();sync();api.render();};
     canvas.addEventListener('pointerdown',down);
@@ -264,7 +285,7 @@
     canvas.addEventListener('pointercancel',e=>end(e,true));
     canvas.addEventListener('contextmenu',e=>e.preventDefault());
     return {sync,overlays,clearView,setMode,
-      reset(){clearView(); owner=''; draft=[]; gesture=null; picked=null; fingers.clear();},
+      reset(){clearView(); owner=''; draft=[]; gesture=null; picked=null; locate=false; fingers.clear();},
       highlight(point){picked=point;sync();}
     };
   }

@@ -2,6 +2,7 @@
 (function(global){
 'use strict';
 const Motion=typeof module==='object'?require('./motion.js'):global.CaseMapMotion;
+const Geo=typeof module==='object'?require('./geo.js'):global.CaseMapGeo;
 const clamp=(n,a,b)=>Math.max(a,Math.min(b,n));
 const lerp=(a,b,u)=>a+(b-a)*u;
 const smooth=(u)=>u*u*(3-2*u);
@@ -94,6 +95,7 @@ class Engine {
     return c;
   }
   viewport(t) {
+    if(this.frameView?.time===t)return this.frameView.camera;
     const c=this.previewCamera ? {...this.previewCamera} : this.camera(t);
     if (this.previewCamera || !this.project.map.keepInFrame) return c;
     const {width:w,height:h}=this.canvas, angle=c.rotation*Math.PI/180;
@@ -117,19 +119,150 @@ class Engine {
     return [clamp(c.x+(dx*Math.cos(r)-dy*Math.sin(r))/w,0,1),
       clamp(c.y+(dx*Math.sin(r)+dy*Math.cos(r))/h,0,1)];
   }
-  drawStars(){const {ctx,canvas}=this,w=canvas.width,h=canvas.height;ctx.fillStyle='#06101b';ctx.fillRect(0,0,w,h);for(let i=0;i<260;i++){const x=starSeed(i+5)*w,y=starSeed(i+300)*h,s=starSeed(i+800)*1.5+.25;ctx.fillStyle=`rgba(220,239,250,${.3+starSeed(i+1200)*.6})`;ctx.fillRect(x,y,s,s);}}
-  drawGlobe(t){const {ctx,canvas}=this,w=canvas.width,h=canvas.height,p=this.project,intro=p.intro||{},u=clamp(t/Math.max(.01,intro.duration||1),0,1);this.drawStars();const cx=w*.5,cy=h*.5,r=Math.min(w,h)*(.265+1.32*u**4);
-    const glow=ctx.createRadialGradient(cx,cy,r*.75,cx,cy,r*1.25);glow.addColorStop(0,'#1a6b8b00');glow.addColorStop(.77,'#1686ad40');glow.addColorStop(1,'#2a8fbd00');ctx.fillStyle=glow;ctx.beginPath();ctx.arc(cx,cy,r*1.27,0,Math.PI*2);ctx.fill();
-    if(this.earthData){const size=Math.min(450,Math.max(128,Math.floor(r*2)));if(this.globeCanvas.width!==size){this.globeCanvas.width=size;this.globeCanvas.height=size;}const img=this.globeCtx.createImageData(size,size),dst=img.data,src=this.earthData.data,tw=this.earthData.width,th=this.earthData.height;
-      const lat0=lerp(8, Number(intro.latitude??29), smooth(u))*Math.PI/180,lon0=lerp(Number(intro.start_longitude??-145),Number(intro.end_longitude??-81),smooth(u))*Math.PI/180, distance=lerp(5,1.08,smooth(u)), cosLat=Math.cos(lat0), sinLat=Math.sin(lat0), scale=1/Math.sqrt(distance*distance-1);
-      for(let yy=0;yy<size;yy++){const y=-(yy/(size-1)*2-1);for(let xx=0;xx<size;xx++){const x=xx/(size-1)*2-1,rr=x*x+y*y,idx=(yy*size+xx)*4;if(rr>1){dst[idx+3]=0;continue;}const rayX=x*scale, rayY=y*scale; const depth=(distance-Math.sqrt(Math.max(0,1-rr)))/(1+rayX*rayX+rayY*rayY);const ix=depth*rayX, iy=depth*rayY, z=distance-depth,lat=Math.asin(clamp(iy*cosLat+z*sinLat,-1,1)),lon=lon0+Math.atan2(ix,z*cosLat-iy*sinLat),sx=((Math.floor((lon/(2*Math.PI)+.5)*tw)%tw)+tw)%tw,sy=clamp(Math.floor((.5-lat/Math.PI)*th),0,th-1),srcidx=(sy*tw+sx)*4,light=clamp(.48+.60*(.38*x+.40*y+.75*z),.22,1.08);
-        dst[idx]=src[srcidx]*light;dst[idx+1]=src[srcidx+1]*light;dst[idx+2]=src[srcidx+2]*light;dst[idx+3]=255;}}
-      this.globeCtx.putImageData(img,0,0);ctx.drawImage(this.globeCanvas,cx-r,cy-r,r*2,r*2);
-    }else{ctx.fillStyle='#155477';ctx.beginPath();ctx.arc(cx,cy,r,0,Math.PI*2);ctx.fill();}
-    ctx.strokeStyle='#5ab7db';ctx.lineWidth=Math.max(2,w*.002);ctx.beginPath();ctx.arc(cx,cy,r,0,Math.PI*2);ctx.stroke();
+  drawStars() {
+    const {ctx,canvas}=this,w=canvas.width,h=canvas.height;
+    const backdrop=ctx.createRadialGradient(w*.46,h*.42,0,w*.52,h*.46,w*.67);
+    backdrop.addColorStop(0,'#15283b');
+    backdrop.addColorStop(.7,'#07121f');
+    backdrop.addColorStop(1,'#03070e');
+    ctx.fillStyle=backdrop;ctx.fillRect(0,0,w,h);
+    for(let i=0;i<240;i++){
+      const s=(starSeed(i+800)*1.4+.28)*(h/720);
+      ctx.fillStyle=`rgba(216,235,255,${.22+starSeed(i+1200)*.7})`;
+      ctx.fillRect(starSeed(i+5)*w,starSeed(i+300)*h,s,s);
+    }
   }
-  drawMap(t){const {ctx,canvas}=this,w=canvas.width,h=canvas.height,c=this.viewport(t);ctx.save();ctx.fillStyle='#233b3e';ctx.fillRect(0,0,w,h);ctx.translate(w/2,h/2);ctx.scale(1,Math.cos(c.tilt*Math.PI/180));ctx.rotate(c.rotation*Math.PI/180);ctx.scale(c.zoom,c.zoom);ctx.translate(-c.x*w,-c.y*h);if(this.map?.width){ctx.drawImage(this.map,0,0,w,h);}else{ctx.fillStyle='#274a47';ctx.fillRect(0,0,w,h);for(let x=0;x<w;x+=60){ctx.strokeStyle='#496b66';ctx.beginPath();ctx.moveTo(x,0);ctx.lineTo(x,h);ctx.stroke();}}
-    ctx.restore();ctx.fillStyle='#05111b17';ctx.fillRect(0,0,w,h);
+  globeGrid(size) {
+    if(this.globeCanvas.width===size && this.sphereGrid)return this.sphereGrid;
+    this.globeCanvas.width=size;
+    this.globeCanvas.height=size;
+    const axis=Float32Array.from({length:size},(_,i)=>(2*i+1)/size-1);
+    const spread=new Float32Array(size*size);
+    for(let y=0;y<size;y++)for(let x=0;x<size;x++){
+      const radius=axis[x]*axis[x]+axis[y]*axis[y];
+      spread[y*size+x]=radius>1?-1:Math.sqrt(1-radius);
+    }
+    this.sphereGrid={axis,spread,buffer:this.globeCtx.createImageData(size,size)};
+    return this.sphereGrid;
+  }
+  drawGlobe(t, quality) {
+    const {ctx,canvas}=this,w=canvas.width,h=canvas.height,intro=this.project.intro;
+    const u=clamp(t/intro.duration,0,1);
+    const pace=(easing[intro.pace]||smooth)(u);
+    this.drawStars();
+    const focus=smooth(clamp((u-.12)/.62,0,1));
+    const advance=clamp(.25*u+.75*pace,0,1);
+    const cx=w*(.49+.043*Math.sin(Math.PI*u)*(1-u)),cy=h*(.52+.04*Math.sin(Math.PI*u));
+    const radius=h*(.29+1.72*advance**3.3);
+    const glow=ctx.createRadialGradient(cx,cy,radius*.94,cx,cy,radius*1.13);
+    glow.addColorStop(0,'#287caa00');
+    glow.addColorStop(.30,'#60cdfca0');
+    glow.addColorStop(.52,'#46aeeb40');
+    glow.addColorStop(1,'#237bb100');
+    ctx.fillStyle=glow;
+    ctx.fillRect(0,0,w,h);
+    if(!this.earthData) {
+      ctx.fillStyle='#1a426a';ctx.beginPath();ctx.arc(cx,cy,radius,0,2*Math.PI);ctx.fill();
+      return;
+    }
+    const size=quality==='preview'?340:canvas.width>1500?760:590;
+    const {axis,spread,buffer}=this.globeGrid(size);
+    const dst=buffer.data, src=this.earthData.data, tw=this.earthData.width, th=this.earthData.height;
+    const latitude=lerp(9,intro.latitude??29,focus)*Math.PI/180;
+    const start=intro.start_longitude??-145, end=intro.end_longitude??-81;
+    const longitude=(start+(((end-start+540)%360)-180)*focus)*Math.PI/180;
+    const camDistance=1+.028+3.15*(1-advance)**2.6;
+    const sinLat=Math.sin(latitude),cosLat=Math.cos(latitude), ray=1/Math.sqrt(camDistance**2-1);
+    const sunX=.68+.08*Math.sin(u*2), sunY=.36, sunZ=.63-.17*u;
+    const minX=clamp(Math.floor((1-cx/radius)*size*.5)-2,0,size-1);
+    const maxX=clamp(Math.ceil((1+(w-cx)/radius)*size*.5)+2,0,size);
+    const minY=clamp(Math.floor((1-cy/radius)*size*.5)-2,0,size-1);
+    const maxY=clamp(Math.ceil((1+(h-cy)/radius)*size*.5)+2,0,size);
+    for(let yy=minY;yy<maxY;yy++)for(let xx=minX;xx<maxX;xx++){
+      const i=yy*size+xx, index=i*4, edge=spread[i];
+      if(edge<0){dst[index+3]=0;continue;}
+      const px=axis[xx]*ray, py=-axis[yy]*ray;
+      const zRay=(camDistance-edge)/(1+px*px+py*py);
+      const x=zRay*px, y=zRay*py, z=camDistance-zRay;
+      const lat=Math.asin(clamp(y*cosLat+z*sinLat,-1,1));
+      const lon=longitude+Math.atan2(x,z*cosLat-y*sinLat);
+      const sx=((Math.floor((lon/(2*Math.PI)+.5)*tw)%tw)+tw)%tw;
+      const sy=clamp(Math.floor((.5-lat/Math.PI)*th),0,th-1), texel=(sy*tw+sx)*4;
+      const day=smooth(clamp(.43+(x*sunX+y*sunY+z*sunZ)*.79,0,1));
+      const rim=(1-edge)**4*(.2+.8*day);
+      const light=.19+.84*day;
+      dst[index]=src[texel]*light+rim*15;
+      dst[index+1]=src[texel+1]*light+rim*58;
+      dst[index+2]=src[texel+2]*(light+.045)+rim*96;
+      dst[index+3]=255*clamp(edge*26,.16,1);
+    }
+    this.globeCtx.putImageData(buffer,0,0);
+    ctx.imageSmoothingEnabled=true;
+    ctx.drawImage(this.globeCanvas,cx-radius,cy-radius,radius*2,radius*2);
+  }
+  drawMap(t, camera=this.viewport(t)) {
+    const {ctx,canvas}=this,w=canvas.width,h=canvas.height,c=camera;
+    ctx.save();
+    ctx.fillStyle='#233b3e';ctx.fillRect(0,0,w,h);
+    ctx.translate(w/2,h/2);
+    ctx.scale(1,Math.cos(c.tilt*Math.PI/180));
+    ctx.rotate(c.rotation*Math.PI/180);
+    ctx.scale(c.zoom,c.zoom);
+    ctx.translate(-c.x*w,-c.y*h);
+    if(this.map?.width)ctx.drawImage(this.map,0,0,w,h);
+    else {
+      ctx.fillStyle='#274a47';ctx.fillRect(0,0,w,h);
+      ctx.strokeStyle='#496b66';
+      for(let x=0;x<w;x+=60){ctx.beginPath();ctx.moveTo(x,0);ctx.lineTo(x,h);ctx.stroke();}
+    }
+    ctx.restore();
+    ctx.fillStyle='#05111b17';ctx.fillRect(0,0,w,h);
+  }
+  drawApproach(t,quality) {
+    const {ctx,canvas,project}=this,w=canvas.width,h=canvas.height;
+    const intro=project.intro,u=t/intro.duration;
+    if(u<.925)this.drawGlobe(t,quality);
+    if(u>.785) {
+      const crossing=smooth(clamp((u-.785)/.14,0,1)), settle=smooth(clamp((u-.785)/.215,0,1));
+      const horizon=lerp(-.28,1.3,crossing)*h;
+      const target=this.viewport(intro.duration);
+      const coords=project.map.bounds && Geo.pixel(project.map.bounds,intro.latitude??29,intro.end_longitude??-81);
+      const pivot=coords||{x:.5,y:.5};
+      const c={...target,x:lerp(pivot.x,target.x,settle),
+        y:lerp(pivot.y,target.y,settle),tilt:lerp(19,target.tilt,settle),
+        zoom:target.zoom*(1+.72*(1-settle)),rotation:target.rotation-8*(1-settle)};
+      if(crossing<1) {
+        ctx.save();
+        ctx.beginPath();ctx.moveTo(0,0);ctx.lineTo(w,0);
+        ctx.lineTo(w,horizon+.18*h);ctx.lineTo(0,horizon-.18*h);
+        ctx.closePath();ctx.clip();
+      }
+      this.drawMap(t,c);
+      if(crossing<1) {
+        ctx.restore();
+        ctx.save();
+        ctx.translate(w/2,horizon);
+        ctx.rotate(Math.atan2(.36*h,w));
+        const edge=ctx.createLinearGradient(0,-h*.14,0,h*.14);
+        edge.addColorStop(0,'#bddef700');
+        edge.addColorStop(.5,'#a1d9ffcc');
+        edge.addColorStop(1,'#9ccff300');
+        ctx.fillStyle=edge;ctx.fillRect(-w,-h*.14,2*w,h*.28);
+        ctx.restore();
+      }
+    }
+    if(u>.24 && u<.86 && intro.place) {
+      const x=w*.5,y=h*.52,s=h*.027;
+      ctx.save();
+      ctx.globalAlpha=smooth(clamp((u-.24)*12,0,1))*(1-smooth(clamp((u-.79)*14,0,1)));
+      ctx.strokeStyle='#a3eaff';ctx.lineWidth=Math.max(1,h*.002);
+      ctx.beginPath();ctx.arc(x,y,s+Math.sin(u*28)*s*.13,0,2*Math.PI);ctx.stroke();
+      ctx.font=`600 ${h*.025}px "Noto Sans CJK SC", sans-serif`;
+      ctx.fillStyle='#e6f6ff';ctx.shadowColor='#02090f';ctx.shadowBlur=7;
+      const label=u<.44?'北美洲':u<.59?(intro.state||'北美洲 · 美国'):(intro.city||intro.place);
+      ctx.fillText(label,x+s*1.55,y+6,w*.42);
+      ctx.restore();
+    }
   }
   drawRoute(actor,t,editing=false) {
     const points=Motion.sorted(actor.points);
@@ -323,34 +456,30 @@ class Engine {
     ctx.fillStyle='#e8f4f9'; ctx.shadowColor='#000'; ctx.shadowBlur=4;
     ctx.fillText('案件过程示意动画 · 非真实现场画面',w*.025,h*.981,w*.45);
     ctx.textAlign='right';
-    ctx.fillText(credit,w*.98,h*.981,w*.48);
+    const earthCredit=t<p.intro.duration?'NASA Earth Observatory · Blue Marble':'';
+    ctx.fillText(earthCredit && t<p.intro.duration*.785?earthCredit:
+      earthCredit?earthCredit+' · '+credit:credit,w*.98,h*.981,w*.48);
     ctx.textAlign='left'; ctx.shadowBlur=0;
   }
-  render(t,options={}){if(!this.project)return;const {ctx,canvas}=this,p=this.project,intro=Number(p.intro?.duration||0);t=clamp(t,0,p.duration);ctx.clearRect(0,0,canvas.width,canvas.height);
-    if (intro>0 && t<intro) {
-      this.drawGlobe(t);
-      const blend=smooth(clamp((t-intro*.83)/(intro*.17),0,1));
-      if (blend>0) {
-        ctx.save();
-        ctx.beginPath(); ctx.arc(canvas.width/2,canvas.height/2,blend*Math.hypot(canvas.width,canvas.height)/2,0,Math.PI*2);
-        ctx.clip(); this.drawMap(t); ctx.restore();
+  render(time,options={}) {
+    if(!this.project)return;
+    const {ctx,canvas}=this,p=this.project,t=clamp(time,0,p.duration);
+    const intro=p.intro.duration;
+    this.frameView={time:t,camera:this.viewport(t)};
+    try {
+      ctx.clearRect(0,0,canvas.width,canvas.height);
+      if(intro>0 && t<intro) this.drawApproach(t,options.quality);
+      else {
+        this.drawMap(t);
+        if(p.show_tracks!==false)for(const a of p.actors)this.drawRoute(a,t);
+        for(const a of [...p.actors].sort((a,b)=>(a.layer??0)-(b.layer??0)))this.drawActor(a,t);
+        this.drawEvents(t);
       }
-      if (p.intro.place) {
-        const x=canvas.width/2, y=canvas.height/2;
-        ctx.strokeStyle='#8ae8fb'; ctx.lineWidth=2;
-        ctx.beginPath(); ctx.arc(x,y,13+Math.sin(t*4)*4,0,Math.PI*2); ctx.stroke();
-        ctx.font=`600 ${canvas.height*.026}px "Noto Sans CJK SC", system-ui`;
-        ctx.fillStyle='#effbff'; ctx.fillText(p.intro.place,x+23,y+7);
-      }
-    } else {
-      this.drawMap(t);
-      if(p.show_tracks!==false) for(const a of p.actors) this.drawRoute(a,t);
-      for(const a of [...p.actors].sort((a,b)=>(a.layer??0)-(b.layer??0))) this.drawActor(a,t);
-      this.drawEvents(t);
-    }
-    this.drawHUD(t);
-    if(options.editor&&t>=intro) this.drawGuide(t,options);
+      this.drawHUD(t);
+      if(options.editor && t>=intro)this.drawGuide(t,options);
+    } finally { this.frameView=null; }
   }
+
 }
 global.CaseMapEngine={Engine,interp,clamp};
 })(globalThis);

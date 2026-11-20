@@ -105,3 +105,18 @@ test('absolute-time keyframes update matching frame time without duplicates',()=
   assert.equal(engine.actorPosition({points},10).x,.9);
   assert.ok(Math.abs(engine.actorPosition({points},7).x-.66)<1e-9);
 });
+
+const Geo=require('../geo.js');
+test('georeferencing round-trips Web Mercator and measures in real units',()=>{
+  const bounds={west:-88.1,east:-87.1,south:41.4,north:42.4,projection:'mercator'};
+  assert.equal(Geo.valid(bounds),true);
+  assert.equal(Geo.valid({...bounds,north:90}),false);
+  const point=Geo.location(bounds,.34,.75);
+  const pixel=Geo.pixel(bounds,point.lat,point.lon);
+  assert.ok(Math.abs(pixel.x-.34)<1e-8 && Math.abs(pixel.y-.75)<1e-8);
+  assert.ok(Math.abs(Geo.distance({lat:0,lon:0},{lat:0,lon:1})-111195)<10);
+  assert.deepEqual(Geo.findCity('Illinois','Chicago'),['Illinois','Chicago',41.8781,-87.6298]);
+  const project=format.empty();
+  assert.throws(()=>format.validate({...project,map:{...project.map,bounds}}),/地理配准/);
+  assert.doesNotThrow(()=>format.validate({...project,map:{credit:'Example',image:'data:image/png;base64,AA==',bounds}}));
+});

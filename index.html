@@ -31,9 +31,26 @@
       <label>地图署名<input id="mapCredit" type="text" maxlength="80" /></label>
       <details><summary>地球定位与视频设置</summary>
         <label>地点名称<input type="text" id="place" maxlength="80"></label>
+        <div class="two-col"><label>美国州名<input type="text" id="geoState" list="geoStates" maxlength="50"></label><label>城市名称<input type="text" id="geoCity" list="geoCities" maxlength="70"></label></div>
+        <datalist id="geoStates"></datalist><datalist id="geoCities"></datalist>
+        <button type="button" id="locateCity" class="btn subtle wide">查找常用城市中心</button>
+        <label>开场节奏<select id="introPace"><option value="smooth">电影缓入缓出</option><option value="linear">匀速</option><option value="in">后段快速推进</option><option value="out">前段快速推进</option></select></label>
         <div class="two-col"><label>目标纬度<input id="latitude" type="number" min="-90" max="90" step=".001"></label><label>目标经度<input id="longitude" type="number" min="-180" max="180" step=".001"></label></div>
         <div class="two-col"><label>分辨率<select id="resolution"><option value="1280">720p</option><option value="1920">1080p</option></select></label><label>帧率<input id="fps" type="number" min="1" max="60" step="1"></label></div>
         <label class="inline"><input id="trackVisible" type="checkbox">成片显示运动轨迹</label>
+      </details>
+      <details>
+        <summary>合法底图配准</summary>
+        <p class="helper">先上传获授权的正北向图片。四边经纬度使用原资料标注的范围。</p>
+        <label>投影<select id="geoProjection"><option value="mercator">Web Mercator</option><option value="geographic">经纬度等距</option></select></label>
+        <div class="two-col">
+          <label>西边经度<input type="number" id="geoWest" step="any"></label>
+          <label>东边经度<input type="number" id="geoEast" step="any"></label>
+          <label>南边纬度<input type="number" id="geoSouth" step="any"></label>
+          <label>北边纬度<input type="number" id="geoNorth" step="any"></label>
+        </div>
+        <button type="button" id="applyBounds" class="btn subtle wide">保存底图配准</button>
+        <button type="button" id="removeBounds" class="btn subtle wide">移除配准</button>
       </details>
       <div class="separator"></div>
       <div class="panel-heading"><span class="section-dot"></span><b>动画对象</b><span class="smalltag" id="actorCount">0 OBJECTS</span></div>
@@ -63,6 +80,7 @@
         <button type="button" id="removeNode" disabled>删除节点</button>
         <button type="button" id="saveView">记录镜头</button>
         <button type="button" id="resetView">恢复画面</button>
+        <button type="button" id="pickLocation" hidden aria-pressed="false">地图取点</button>
         <button type="button" id="undo" disabled>撤销</button>
         <button type="button" id="redo" disabled>重做</button>
         <span role="status" id="motionStatus"></span>
@@ -75,7 +93,7 @@
         <label>转弯减速<input type="range" id="turnSlow" min="0" max="2" step=".1" value=".6"></label>
         <label>转向平滑<input type="range" id="steering" min="0" max="1" step=".05" value=".4"></label>
         <button type="button" id="routeApply">应用路线 / 更新时长</button>
-        <button type="button" id="routeCancel">丢弃未保存的路线</button>
+        <button type="button" id="routeCancel">丢弃未保存的路线</button><output id="routeDistance"></output>
       </div>
       <div class="transport">
         <button id="btnBack" class="icon-btn" aria-label="上一帧">−1 帧</button><button id="btnPlay" class="play-btn">▶ 播放</button>
@@ -161,6 +179,7 @@
     <form method="dialog"><button class="btn subtle wide">关闭</button></form>
   </div></dialog>
   <div id="toast" role="status" aria-live="polite"></div>
+  <script src="geo.js"></script>
   <script src="project.js"></script>
   <script src="script.js"></script>
   <script src="motion.js"></script>

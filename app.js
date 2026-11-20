@@ -10,12 +10,13 @@
   let project, selected = '', time = 0, playback = null, loop = true, full = false, notice;
   let audioPlayers = [];
   const Motion = window.CaseMapMotion;
+  const Geo = window.CaseMapGeo;
   const past=[], future=[];
   let lastState=null, selectedPoint=null, keyClipboard=[], multi=false;
   const chosenKeys=new Set();
   const motion=window.CaseMapMotionEditor.mount({
     canvas,engine,project:()=>project,actor:()=>actor(),time:()=>time,full:()=>full,render,seek,stop,select,
-    savePoint,saveCamera,selectPoint,
+    savePoint,saveCamera,selectPoint,saveLocation,
     changed(){actorList();inspector();revised();}
   });
 
@@ -126,7 +127,7 @@
   function render() {
     if (!project) return;
     const overlays=motion.overlays();
-    engine.render(time,{editor:!full&&!playback,selectedActor:selected,...overlays});
+    engine.render(time,{editor:!full&&!playback,quality:playback?'preview':'still',selectedActor:selected,...overlays});
     $('timecode').textContent = timecode(time) + ' / ' + timecode(project.duration);
     $('scrubber').value = String(time);
     $('playhead').style.left = 'calc(102px + (100% - 102px) * ' + time/project.duration + ')';
@@ -192,6 +193,12 @@
     $('place').value = project.intro.place || '';
     $('latitude').value = project.intro.latitude ?? 29;
     $('longitude').value = project.intro.end_longitude ?? -81;
+    $('introPace').value=project.intro.pace || 'smooth';
+    $('geoState').value=project.intro.state || '';
+    $('geoCity').value=project.intro.city || '';
+    $('geoProjection').value=project.map.bounds?.projection || 'mercator';
+    for(const k of ['West','East','South','North']) $('geo'+k).value=project.map.bounds?.[k.toLowerCase()]??'';
+    $('removeBounds').disabled=!project.map.bounds;
     $('resolution').value = project.size[0];
     $('fps').value = project.fps;
     $('trackVisible').checked = project.show_tracks !== false;
@@ -569,8 +576,49 @@
     $(id).value=obj[key];
     revised();
   }
+  function saveLocation(lat,lon,place) {
+    project.intro.latitude=lat;
+    project.intro.end_longitude=lon;
+    if(place) project.intro.place=place;
+    $('latitude').value=lat;
+    $('longitude').value=lon;
+    $('place').value=project.intro.place||'';
+    revised();
+  }
+  const states=[...new Set(Geo.cities.map(c=>c[0]))];
+  $('geoStates').replaceChildren(...states.map(value=>new Option(value)));
+  $('geoCities').replaceChildren(...Geo.cities.map(c=>new Option(c[1])));
+  $('locateCity').onclick=()=>{
+    const city=Geo.findCity($('geoState').value,$('geoCity').value);
+    if(!city){toast('该城市不在离线索引中，可直接填写经纬度');return;}
+    const [state,name,lat,lon]=city;
+    project.intro.state=state;project.intro.city=name;
+    $('geoState').value=state;$('geoCity').value=name;
+    saveLocation(lat,lon,name+' · '+state);
+    toast('已定位城市中心，现场可在配准底图上取点');
+  };
+  $('applyBounds').onclick=()=>{
+    if(!project.map.credit.trim() || ['assets/demo-map.jpg','assets/demo-map.webp'].includes(project.map.image)){
+      toast('请先上传有授权的底图并填写署名');return;
+    }
+    const bounds={projection:$('geoProjection').value};
+    for(const key of ['West','East','South','North'])bounds[key.toLowerCase()]=$('geo'+key).valueAsNumber;
+    if(!Geo.valid(bounds)){toast('无法保存该配准。请检查四边范围及投影。');return;}
+    project.map.bounds=bounds;
+    $('removeBounds').disabled=false;
+    revised();
+    toast('已保存配准，预览区可直接地图取点');
+  };
+  $('removeBounds').onclick=()=>{
+    delete project.map.bounds;
+    $('removeBounds').disabled=true;
+    revised();
+  };
+  bound('geoState','change',input=>{project.intro.state=input.value;revised();});
+  bound('geoCity','change',input=>{project.intro.city=input.value;revised();});
+  bound('introPace','change',input=>{project.intro.pace=input.value;revised();});
   bound('projectTitle','input',input=>{ project.title=input.value; revised(); });
-  bound('mapCredit','input',input=>{ project.map.credit=input.value; revised(); });
+  bound('mapCredit','input',input=>{ project.map.credit=input.value; if(!input.value.trim()) delete project.map.bounds; revised(); });
   bound('place','input',input=>{ project.intro.place=input.value; revised(); });
   bound('latitude','change',()=>setNumber('latitude',project.intro,'latitude',-90,90,29));
   bound('longitude','change',()=>setNumber('longitude',project.intro,'end_longitude',-180,180,-81));
@@ -692,6 +740,8 @@
     const image=await importImage(file,1920,1080);
     if (current!==project) return;
     project.map.image=image;
+    delete project.map.bounds;
+    $('removeBounds').disabled=true;
     project.map.credit='';
     $('mapCredit').value='';
     engine.setProject(project);

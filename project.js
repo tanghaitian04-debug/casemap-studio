@@ -1,6 +1,7 @@
 /* Shared project format for the editor, tests and frame renderer. */
 (function (root) {
   'use strict';
+  const Geo=typeof module==='object'?require('./geo.js'):root.CaseMapGeo;
   const widths = [1280, 1920];
   const kinds = ['officer', 'suspect', 'person', 'civilian', 'car'];
   const effects = {
@@ -39,9 +40,14 @@
     optional(intro.latitude, v => number(v, -90, 90, '纬度'));
     for (const key of ['start_longitude', 'end_longitude']) optional(intro[key], v => number(v, -180, 180, key));
     optional(intro.place, v => string(v, 80, '地点'));
+    optional(intro.state, v => string(v,50,'州名'));
+    optional(intro.city, v => string(v,70,'城市'));
+    optional(intro.pace, v => require(curves.includes(v) && v!=='hold','开场节奏'));
     object(map, '地图');
     media(map.image, '地图图片');
     string(map.credit, 160, '地图署名');
+    optional(map.bounds, value => require(Geo.valid(value) && map.credit.trim() &&
+      !['assets/demo-map.jpg','assets/demo-map.webp'].includes(map.image),'底图地理配准'));
     const time = (value, path) => number(value, 0, duration, path);
     const xy = item => { number(item.x, 0, 1, 'X'); number(item.y, 0, 1, 'Y'); };
     const point = item => {
