@@ -92,14 +92,26 @@ class Engine {
     }
     return c;
   }
+  viewport(t) {
+    const c=this.camera(t);
+    if (!this.project.map.keepInFrame) return c;
+    const {width:w,height:h}=this.canvas, angle=c.rotation*Math.PI/180;
+    const cos=Math.abs(Math.cos(angle)), sin=Math.abs(Math.sin(angle));
+    const tilt=Math.cos(c.tilt*Math.PI/180);
+    const width=cos + (h/w)*sin/tilt, height=(w/h)*sin + cos/tilt;
+    c.zoom=Math.max(c.zoom,width,height);
+    c.x=clamp(c.x,width/(2*c.zoom),1-width/(2*c.zoom));
+    c.y=clamp(c.y,height/(2*c.zoom),1-height/(2*c.zoom));
+    return c;
+  }
   worldToScreen(x, y, t) {
-    const c=this.camera(t), w=this.canvas.width, h=this.canvas.height;
+    const c=this.viewport(t), w=this.canvas.width, h=this.canvas.height;
     const r=c.rotation*Math.PI/180, dx=(x-c.x)*w, dy=(y-c.y)*h;
     return [w/2+c.zoom*(dx*Math.cos(r)-dy*Math.sin(r)),
       h/2+c.zoom*Math.cos(c.tilt*Math.PI/180)*(dx*Math.sin(r)+dy*Math.cos(r))];
   }
   screenToWorld(px, py, t) {
-    const c=this.camera(t), w=this.canvas.width, h=this.canvas.height;
+    const c=this.viewport(t), w=this.canvas.width, h=this.canvas.height;
     const r=-c.rotation*Math.PI/180, dx=(px-w/2)/c.zoom, dy=(py-h/2)/c.zoom/Math.cos(c.tilt*Math.PI/180);
     return [clamp(c.x+(dx*Math.cos(r)-dy*Math.sin(r))/w,0,1),
       clamp(c.y+(dx*Math.sin(r)+dy*Math.cos(r))/h,0,1)];
@@ -115,7 +127,7 @@ class Engine {
     }else{ctx.fillStyle='#155477';ctx.beginPath();ctx.arc(cx,cy,r,0,Math.PI*2);ctx.fill();}
     ctx.strokeStyle='#5ab7db';ctx.lineWidth=Math.max(2,w*.002);ctx.beginPath();ctx.arc(cx,cy,r,0,Math.PI*2);ctx.stroke();
   }
-  drawMap(t){const {ctx,canvas}=this,w=canvas.width,h=canvas.height,c=this.camera(t);ctx.save();ctx.fillStyle='#233b3e';ctx.fillRect(0,0,w,h);ctx.translate(w/2,h/2);ctx.scale(1,Math.cos(c.tilt*Math.PI/180));ctx.rotate(c.rotation*Math.PI/180);ctx.scale(c.zoom,c.zoom);ctx.translate(-c.x*w,-c.y*h);if(this.map?.width){ctx.drawImage(this.map,0,0,w,h);}else{ctx.fillStyle='#274a47';ctx.fillRect(0,0,w,h);for(let x=0;x<w;x+=60){ctx.strokeStyle='#496b66';ctx.beginPath();ctx.moveTo(x,0);ctx.lineTo(x,h);ctx.stroke();}}
+  drawMap(t){const {ctx,canvas}=this,w=canvas.width,h=canvas.height,c=this.viewport(t);ctx.save();ctx.fillStyle='#233b3e';ctx.fillRect(0,0,w,h);ctx.translate(w/2,h/2);ctx.scale(1,Math.cos(c.tilt*Math.PI/180));ctx.rotate(c.rotation*Math.PI/180);ctx.scale(c.zoom,c.zoom);ctx.translate(-c.x*w,-c.y*h);if(this.map?.width){ctx.drawImage(this.map,0,0,w,h);}else{ctx.fillStyle='#274a47';ctx.fillRect(0,0,w,h);for(let x=0;x<w;x+=60){ctx.strokeStyle='#496b66';ctx.beginPath();ctx.moveTo(x,0);ctx.lineTo(x,h);ctx.stroke();}}
     ctx.restore();ctx.fillStyle='#05111b17';ctx.fillRect(0,0,w,h);
   }
   drawRoute(a,t){const pts=[...(a.points||[])].filter(p=>p.t<=t).sort((a,b)=>a.t-b.t);if(pts.length<2)return;const ctx=this.ctx;ctx.strokeStyle=hexToRgba(a.color,.85);ctx.lineWidth=Math.max(2,this.canvas.height*.003);ctx.lineJoin='round';ctx.beginPath();pts.forEach((p,i)=>{const [x,y]=this.worldToScreen(p.x,p.y,t);if(i===0)ctx.moveTo(x,y);else ctx.lineTo(x,y);});ctx.stroke();}
@@ -232,9 +244,32 @@ class Engine {
       ctx.restore();
     }
   }
-  drawHUD(t){const {ctx,canvas}=this,w=canvas.width,h=canvas.height,p=this.project;drawRounded(ctx,w*.026,h*.036,w*.49,h*.097,13,'#07121ded');ctx.fillStyle='#f0f7fb';ctx.font=`600 ${h*.033}px system-ui`;ctx.fillText(String(p.title||'案件地图还原').slice(0,28),w*.044,h*.086);ctx.fillStyle='#7fd5f1';ctx.font=`${h*.017}px system-ui`;ctx.fillText(String(p.subtitle||p.intro.place||'案件地图动画').slice(0,45),w*.044,h*.119);
-    const cap=(p.captions||[]).find(c=>c.start<=t&&t<c.end);if(cap){const s=String(cap.text||'');ctx.font=`600 ${h*.037}px system-ui`;const tw=Math.min(w*.92,ctx.measureText(s).width);drawRounded(ctx,w*.5-tw*.5-23,h*.835,tw+46,h*.077,12,'#07111de8');ctx.fillStyle='#fff';ctx.textAlign='center';ctx.fillText(s,w*.5,h*.889,w*.92);ctx.textAlign='left';}
-    ctx.font=`${h*.017}px system-ui`;ctx.fillStyle='#d6e7ee';ctx.shadowColor='#000';ctx.shadowBlur=4;ctx.fillText('案件过程示意动画 · 非真实现场画面',w*.025,h*.983);const credit=String(p.map?.credit||'原创示例地图');const tw=ctx.measureText(credit).width;ctx.fillText(credit,w-tw-w*.02,h*.983);ctx.shadowBlur=0;
+  drawHUD(t) {
+    const {ctx,canvas}=this, w=canvas.width, h=canvas.height, p=this.project;
+    const typeface='"Noto Sans CJK SC", "PingFang SC", sans-serif';
+    drawRounded(ctx,w*.026,h*.036,w*.49,h*.097,13,'#07121ded');
+    ctx.fillStyle='#f0f7fb';
+    ctx.font=`600 ${h*.033}px ${typeface}`;
+    ctx.fillText(p.title || '案件地图动画',w*.044,h*.085,w*.454);
+    ctx.fillStyle='#7fd5f1';
+    ctx.font=`${h*.017}px ${typeface}`;
+    ctx.fillText(p.subtitle || p.intro.place || '案件地图动画',w*.044,h*.118,w*.454);
+    const caption=p.captions.find(c=>c.start<=t && t<c.end);
+    if (caption) {
+      ctx.font=`600 ${h*.038}px ${typeface}`;
+      const width=Math.min(w*.9,ctx.measureText(caption.text).width);
+      drawRounded(ctx,(w-width)/2-20,h*.833,width+40,h*.079,12,'#07111de8');
+      ctx.fillStyle='#fff'; ctx.textAlign='center'; ctx.textBaseline='middle';
+      ctx.fillText(caption.text,w/2,h*.872,w*.9);
+      ctx.textAlign='left'; ctx.textBaseline='alphabetic';
+    }
+    const credit=p.map.credit || (this.mapRef==='assets/demo-map.webp'?'原创示例地图':'用户导入地图');
+    ctx.font=`${h*.017}px ${typeface}`;
+    ctx.fillStyle='#e8f4f9'; ctx.shadowColor='#000'; ctx.shadowBlur=4;
+    ctx.fillText('案件过程示意动画 · 非真实现场画面',w*.025,h*.981,w*.45);
+    ctx.textAlign='right';
+    ctx.fillText(credit,w*.98,h*.981,w*.48);
+    ctx.textAlign='left'; ctx.shadowBlur=0;
   }
   render(t,options={}){if(!this.project)return;const {ctx,canvas}=this,p=this.project,intro=Number(p.intro?.duration||0);t=clamp(t,0,p.duration);ctx.clearRect(0,0,canvas.width,canvas.height);
     if (intro>0 && t<intro) {

@@ -17,6 +17,7 @@
   },
   "map": {
     "image": "assets/demo-map.jpg",
+    "keepInFrame": true,
     "credit": "原创虚构示例地图"
   },
   "show_tracks": true,
