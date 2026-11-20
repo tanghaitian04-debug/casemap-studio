@@ -5,7 +5,7 @@
   const statusLabels={unverified:'待核实',inferred:'推断',illustrative:'示意',verified:'已核实'};
   const fields=['title','date','country','state','city','address','story','links','requirements','pace'];
   let project, files=new Map(), urls=new Map(), selected=0, time=0, playing=false, needsPrepare=true, drawRequested=false, drawActive=false;
-  let draftTimer,editor,editableShot,connection,job,jobOrigin;
+  let draftTimer,editor,editableShot,connection,job,jobOrigin,monitorAudio;
   let uploadAssets={},pendingFiles=new Map();
   const message=text=>{$('status').textContent=text;};
   const compiler=new window.CaseMapFilmRenderer.FilmRenderer($('preview'),$('geo-preview'),(id,asset)=>urls.get(id)||asset.builtin);
@@ -99,13 +99,23 @@
       }
     })().finally(()=>{drawActive=false;if(drawRequested)paint();});
   }
-  function stop(){playing=false;$('play').textContent='播放草稿';}
+  function stop(){playing=false;monitorAudio?.pause();$('play').textContent='播放草稿';}
+  function startVoice(){
+    const source=urls.get(project?.voice);
+    if(!source)return;
+    monitorAudio?.pause();
+    monitorAudio=new Audio(source);
+    monitorAudio.currentTime=time;
+    monitorAudio.play().catch(()=>message('浏览器暂未允许播放旁白，成片仍会合成音轨。'));
+  }
   function seek(t){stop();time=t;paint();}
   function refresh(){
     if(!project)return;
     const shots=Film.sequence(project.scenes);
     $('seek').max=shots.at(-1).end;
     $('resolution').value=project.width;$('fps').value=project.fps;$('reviewed').checked=Boolean(project.reviewed);
+    $('render-budget').textContent='当前任务约 '+Math.round(shots.at(-1).end*project.fps).toLocaleString()+
+      ' 帧。内置地理影像不发起计费请求。私有主机、AI 和配音按配置服务计费。';
     $('pipeline').replaceChildren(...Film.pipeline(project).map(([name,state])=>{
       const indicator=el('span',name+' · '+({ready:'就绪',pending:'待处理',missing:'缺少资料'}[state]));
       indicator.dataset.status=state;return indicator;
@@ -176,6 +186,11 @@
         for(const [key,title] of [['in','素材入点（秒）'],['zoom','构图缩放'],['x','横向偏移'],['y','纵向偏移'],['gain','素材音量']])
           fields.append(input(title,s[key]??1,v=>update(shot=>shot[key]=v,false),'number'));
         row.append(fields);
+        row.append(button(s.mask?'移除裁切遮罩':'添加裁切遮罩',()=>update(shot=>{
+          if(shot.mask)delete shot.mask;else shot.mask={x:.05,y:.05,w:.9,h:.9};
+        })));
+        if(s.mask)for(const [key,label] of [['x','遮罩左边'],['y','遮罩上边'],['w','遮罩宽度'],['h','遮罩高度']])
+          row.append(input(label,s.mask[key],v=>update(shot=>shot.mask[key]=v,false),'number'));
         row.append(button(s.arrow?'移除指示箭头':'添加指示箭头',()=>update(shot=>{
           if(shot.arrow)delete shot.arrow;else shot.arrow={x:.55,y:.52};
         })));
@@ -183,7 +198,29 @@
           row.append(input(label,s.arrow[key],v=>update(shot=>shot.arrow[key]=v,false),'number'));
       }
       if(s.type==='MapScene'||s.type==='ReconstructionScene'){
-        row.append(button('用地图编辑器修改路径',()=>openMap(s)));
+        const items=el('div',undefined,'actions');
+        const preset=(name,style)=>button(name,()=>update(shot=>{
+          const p=shot.map, at=shot.in, end=Math.min(at+shot.duration,p.duration);
+          const center={x:.5,y:.5,zoom:1.2,rotation:0};
+          let first={...center,t:at},last={...center,t:end,ease:'smooth'};
+          if(style==='follow'){
+            const target=p.actors.find(actor=>actor.kind==='car');
+            if(!target){message('该地图没有车辆');return;}
+            first={...first,target:target.id,zoom:1.65};
+            last={...last,target:target.id,zoom:1.65};
+          }else if(style==='two'){
+            const points=p.actors.filter(a=>a.points.length).slice(0,2).map(a=>a.points[0]);
+            if(points.length<2){message('请选择含两个对象的地图');return;}
+            first.x=last.x=(points[0].x+points[1].x)/2;
+            first.y=last.y=(points[0].y+points[1].y)/2;
+          }else if(style==='push'){first.zoom=1;last.zoom=2.6;}
+          else if(style==='wide'){first.zoom=1.6;last.zoom=1;}
+          p.camera=at===end?[first]:[first,last];
+        }));
+        items.append(button('用地图编辑器修改路径',()=>openMap(s)),
+          preset('停车场俯视','top'),preset('跟随车辆','follow'),preset('两对象同框','two'),
+          preset('事件推进','push'),preset('拉远结束','wide'));
+        row.append(items);
       }
       const mediaList=Object.entries(project.assets).filter(([,a])=>['video','image'].includes(a.kind));
       if(mediaList.length)row.append(input('使用素材替换当前镜头','',v=>{
@@ -272,7 +309,7 @@
     const total=Film.sequence(project.scenes).at(-1).end;
     if(time>=total-.1)time=0;
     const anchor=performance.now()-1000*time;
-    playing=true;$('play').textContent='暂停';
+    playing=true;$('play').textContent='暂停';startVoice();
     const step=now=>{
       if(!playing)return;
       time=Math.min(total,(now-anchor)/1000);
@@ -297,6 +334,11 @@
   }
   $('save-board').onclick=()=>saveText(Film.storyboard,'storyboard.json');
   $('save-events').onclick=()=>saveText(p=>p.events,'events.json');
+  $('draft-subs').onclick=()=>{
+    if(!project)return;
+    try{edit(p=>Film.draftCues(p));message('旁白字幕已按镜头时长分配，可逐镜头复核。');}
+    catch(error){message(error.message);}
+  };
   $('save-srt').onclick=()=>saveText(Film.srt,'subtitles.srt','text/plain');
   $('save-script').onclick=()=>saveText(Film.narration,'narration-zh.txt','text/plain');
   $('save-sources').onclick=()=>saveText(p=>({sources:p.sources,assets:p.assets}),'sources.json');
@@ -307,8 +349,16 @@
   $('import').onchange=async e=>{
     const file=e.target.files[0]; e.target.value='';if(!file)return;
     try{
-      if(file.name.toLowerCase().endsWith('.zip')){
-        const data=await Pack.unpack(await file.arrayBuffer());use(data.project,data.blobs);
+      const magic=new Uint8Array(await file.slice(0,4).arrayBuffer());
+      if(file.name.toLowerCase().endsWith('.zip')||(magic[0]===80&&magic[1]===75&&magic[2]===3&&magic[3]===4)){
+        const payload=await file.arrayBuffer();
+        if(payload.byteLength>110_000_000)throw Error('项目包不能超过 110 MB');
+        const headers=fflate.unzipSync(new Uint8Array(payload),{filter:item=>
+          item.originalSize<12_000_000&&['film.json','project.json'].includes(item.name)});
+        if(Object.hasOwn(headers,'film.json')){
+          const data=await Pack.unpack(payload);use(data.project,data.blobs);
+        }else if(Object.hasOwn(headers,'project.json'))use(Film.migrate(await CaseMapPackage.unpack(payload)));
+        else throw Error('ZIP 中找不到支持的影片或地图项目');
       }else{
         const value=JSON.parse(await file.text());use(value.version===1?Film.migrate(value):value);
       }
@@ -348,9 +398,9 @@
   $('voice').onclick=async()=>{
     if(!project||!window.confirm('将当前旁白稿发送给所连接服务的语音供应商？'))return;
     try{
-      const data=await (await api('/api/film/voice',jsonPost({project:{scenes:project.scenes.map(({duration,narration})=>({duration,narration}))}}))).blob();
+      const data=await (await api('/api/film/voice',jsonPost({project:{scenes:project.scenes.map(({duration,narration})=>({duration,narration}))},speed:$('voice-speed').valueAsNumber}))).blob();
       const id=freshId('voice');files.set(id,data);
-      edit(p=>{p.assets[id]={kind:'audio',name:'中文合成旁白',credit:'已配置语音服务 · AI 合成',rights:true,type:'audio/mpeg'};p.voice=id;});
+      edit(p=>{p.assets[id]={kind:'audio',name:'中文合成旁白',credit:'已配置语音服务 · AI 合成',rights:true,type:'audio/mpeg'};p.voice=id;Film.draftCues(p);});
       syncUrls();message('旁白已生成并加入项目');
     }catch(error){message(error.message);}
   };

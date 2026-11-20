@@ -1,0 +1,74 @@
+name: Render CaseMap Documentary
+on:
+  workflow_dispatch:
+    inputs:
+      project:
+        description: Public or synthetic project path, JSON or ZIP
+        default: examples/film-demo.json
+        type: string
+        required: true
+  push:
+    branches: [main]
+    paths:
+      - 'documentary*.js'
+      - 'documentary.html'
+      - 'film-*.js'
+      - 'geo-scene.js'
+      - 'scripts/render-film.mjs'
+      - 'assets/geo/**'
+      - 'examples/film-demo.json'
+      - '.github/workflows/film.yml'
+permissions:
+  contents: read
+jobs:
+  documentary:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 42
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npm run build
+      - run: npx playwright install --only-shell --with-deps chromium
+      - run: sudo apt-get install -y ffmpeg fonts-noto-cjk
+      - name: Compose complete documentary
+        env:
+          FILM_PROJECT: ${{ inputs.project || 'examples/film-demo.json' }}
+        run: |
+          target="$(realpath -- "$FILM_PROJECT")"
+          case "$target" in
+            "$GITHUB_WORKSPACE/"*.json|"$GITHUB_WORKSPACE/"*.zip) ;;
+            *) echo 'The project must be a JSON or ZIP in the current repository.'; exit 1 ;;
+          esac
+          npm run render:film -- --project "$target" --output output/film/casemap-v2-documentary.mp4
+          node scripts/verify-frames.mjs output/film/casemap-v2-documentary.mp4
+      - uses: actions/upload-artifact@v4
+        with:
+          name: casemap-documentary
+          path: output/film/
+          if-no-files-found: error
+          retention-days: 14
+  geo-proof:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npm run build
+      - run: npx playwright install --only-shell --with-deps chromium
+      - run: sudo apt-get install -y ffmpeg fonts-noto-cjk
+      - run: npm run render:geo -- --output output/geo/casemap-v2-geo.mp4
+      - run: node scripts/verify-frames.mjs output/geo/casemap-v2-geo.mp4
+      - uses: actions/upload-artifact@v4
+        with:
+          name: casemap-cesium-10-second-proof
+          path: output/geo/
+          if-no-files-found: error
+          retention-days: 14

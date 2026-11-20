@@ -152,7 +152,9 @@
       return {type:s.type,aerial:s.type==='GlobeScene'&&this.globe.aerial};
     }
     overlay(s,caption,credit,w,h) {
-      const ctx=this.ctx,source=credit.trim();
+      const ctx=this.ctx;
+      const voice=this.project.assets[this.project.voice]?.credit?.includes('AI 合成')?'AI 合成旁白':'';
+      const source=[credit.trim(),voice].filter(Boolean).join(' · ');
       if(['FootageScene','GlobeScene','ImageScene'].includes(s.type)){
         ctx.fillStyle='#071322dc';ctx.fillRect(w*.034,h*.038,w*.50,h*.083);
         ctx.font=this.typeface(h*.036,700);ctx.fillStyle='#ecf7ff';

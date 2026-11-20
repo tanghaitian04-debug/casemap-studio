@@ -79,3 +79,35 @@
 渲染服务接收授权请求，运行同一套画布引擎和 FFmpeg，帧数进度来自实际渲染。任务输入从私有任务目录读取，处理完即删，视频默认在进程运行期间保留 12 小时。公开 Pages 只有接入该 HTTPS 服务后才可点击「开始云端渲染」。手动流程适用于可公开的项目。
 
 可选 AI 使用服务端环境变量 `OPENAI_API_KEY` 与 `CASEMAP_AI_MODEL`，以 [OpenAI Structured Outputs](https://developers.openai.com/api/docs/guides/structured-outputs) 返回事件数据，再校验并转成可编辑项目。用户确认后仅提交描述文字，未知位置、行动、证据和时间须在可视化编辑器中重新核实。规则生成在没有服务时仍可用。
+
+## V2.0 纪录片工作台
+
+[打开纪录片工作台](https://tanghaitian04-debug.github.io/casemap-studio/documentary.html) ｜ [打开原有地图编辑器](https://tanghaitian04-debug.github.io/casemap-studio/)
+
+### iPhone 使用
+
+1. 点「自动制作影片」，输入案情文字、地点及资料。如果有权使用原片，勾选素材权限后再导入。可以跳过暂时未知的时间与经纬度。
+2. 点「生成可编辑分镜」。工作台会登记用户资料与链接、列出事件并给出可编辑的影片结构。引用链接的正文由用户查阅，事件发生秒数留空表示待核实。分镜的播放秒数从镜头时长独立计算。
+3. 在「资料与事件时间线」填写发布时间、摘录、核实状态及证据关联。用「定位预览」检查各镜头，可裁切视频、改构图、加遮罩和通用箭头。分镜能上移、下移和改时长。
+4. 在地图分镜点「用地图编辑器修改路径」，用 V1.1 的手绘、自动关键帧或逐点路径工具编辑。点「保存回影片」更新分镜。普通地图草稿继续保存到原有工作区。
+5. 在「审核与导出」下载 ZIP、分镜、事件、SRT 或旁白稿。V2 打开 V1 JSON 或 V1 ZIP 时会保留原地图关键帧。当前影片的素材草稿存在浏览器 IndexedDB，ZIP 用于备份与重新打开。
+6. 若有授权的 HTTPS 私有渲染服务，输入服务地址和口令，审核并点「渲染整片 MP4」。静态站和 GitHub Actions 继续分离。公开素材可经 Actions 的 Render CaseMap Documentary 工作流渲染，私有素材保留在私有服务或已获授权的 Codex 工作环境。
+
+### 地理引擎、真实地点和授权
+
+此版以实际 CesiumJS WGS84 三维球体、连续相机关键帧和独立图层实现飞行。奥兰多示例由 NASA 全球图层以及两级 USDA NAIP 航拍图层组成。离线逐帧渲染等待图层图像解码和 Cesium globe tilesLoaded，超时会失败而不是输出占位图。Cesium 球面为椭球地形，未加载实景建筑网格和高程数据。其他地区无精细图层时维持全球定位镜头，后续近景可插入合法授权的底图或用户视频。
+
+Google Photorealistic 3D Tiles 技术上可由 CesiumJS 显示，但需要 Map Tiles API 密钥、启用计费及正确显示 Google 标识和每个数据供方的署名。使用 [Map Tiles API 政策](https://developers.google.com/maps/documentation/tile/policies)、[用量和计费](https://developers.google.com/maps/documentation/tile/usage-and-billing) 及 [Google Geo Guidelines](https://about.google/brand-resource-center/products-and-services/geo-guidelines/) 分别核对交互显示、视频输出、商业用途与再分发权；Cesium ion 的可用范围也受 [数据授权与第三方条款](https://cesium.com/learn/ion/content-usage-and-attribution-guide/) 约束。本项目未启用这些服务、未缓存其瓦片、未产生其费用。内置公共航拍与地球来源见 [素材说明](assets/NOTICE.md)。
+
+### 私有任务、AI 和配音
+
+私有后端复用 V1 的鉴权和队列，V2 路由为 `GET /api/film/capabilities`、`POST /api/film/jobs`、`GET /api/film/jobs/:id`、`GET /api/film/jobs/:id/video`。需先审核影片，输入给队列的是 V2 ZIP。任务媒体临时由环回接口提供给渲染浏览器，公开静态站不会提供上传素材。查看导出面板的帧数预算。免费内置地图不发起计费请求，私有主机、AI 或配音的价格视部署和供应商而定。
+
+配置服务端 `OPENAI_API_KEY` 和 `CASEMAP_AI_MODEL` 后可以使用结构化分镜和中文旁白。仅发送用户明确提交的案情文字，网页链接和视频由用户查核、选段，模型给出的事实摘录必须在提供文本中出现，且无法直接升级为已核实事实。可选 `CASEMAP_TTS_MODEL` 调用兼容 Speech API 的模型；模型兼容性与实际价格以供应商当期文档为准。生成旁白时逐镜头对齐，SRT 草稿可按句生成。AI 合成旁白在输出标记。未配置语音服务时，可上传自己的录音，或交付旁白稿、SRT 和含原片音轨的有声成片。当前公开静态站没有绑定私有服务、AI 密钥或语音密钥。
+
+### 云端验证入口
+
+- `npm test` 保留 V1 回归测试并加入地理相机、事实时间、证据引用、V2 ZIP 与示例时长测试。
+- `npm run test:film-browser` 运行 Chromium / WebKit 纪录片流程，`node tests/film-private.mjs` 校验私有 ZIP 到 H.264 下载流程。
+- `npm run render:geo` 输出 300 帧的 1080p Cesium 技术片。 `npm run render:film` 合成 78 秒虚构短片，输出 H.264、原片音轨和配套交付文件。
+- 生产环境的限制包括地形网格和在线影像授权、仅手动审核资料链接和原片对应关系、无真实 iPhone 实机验证、与私有服务器的生产部署。虚构示例的中文旁白已备稿，音轨为原创模拟环境声，未配合成语音。

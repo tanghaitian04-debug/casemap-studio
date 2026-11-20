@@ -1,17 +1,20 @@
 {
   "name": "casemap-studio",
-  "version": "1.1.0",
+  "version": "2.0.0",
   "private": true,
   "scripts": {
     "build": "node scripts/build.mjs",
-    "lint": "node --check app.js && node --check engine.js && node --check project.js && node --check script.js && node --check scripts/render.mjs && node --check motion.js && node --check motion-editor.js && node --check geo.js && node --check cloud-client.js && node --check project-package.js && node --check draft-store.js && node --check server/private-render.mjs && node --check server/ai.mjs",
-    "test": "node --test tests/core.test.cjs",
+    "lint": "node --check app.js && node --check engine.js && node --check project.js && node --check script.js && node --check scripts/render.mjs && node --check motion.js && node --check motion-editor.js && node --check geo.js && node --check cloud-client.js && node --check project-package.js && node --check draft-store.js && node --check server/private-render.mjs && node --check server/ai.mjs && node --check documentary-ui.js && node --check documentary.js && node --check film-renderer.js && node --check flight.js && node --check server/film-agent.mjs",
+    "test": "node --test tests/*.test.cjs",
     "test:browser": "node tests/browser.mjs",
     "test:video": "node tests/video.mjs",
     "render": "node scripts/render.mjs",
     "test:private": "node tests/private-render.mjs",
     "test:parity": "node tests/frame-parity.mjs",
-    "serve:private": "node server/private-render.mjs"
+    "serve:private": "node server/private-render.mjs",
+    "test:film-browser": "node tests/film-browser.mjs",
+    "render:film": "node scripts/render-film.mjs",
+    "render:geo": "node scripts/render-geo.mjs"
   },
   "devDependencies": {
     "@napi-rs/canvas": "^0.1.100",

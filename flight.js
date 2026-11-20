@@ -16,7 +16,7 @@
   }
   function preset(lat,lon,duration,label,style='arrival') {
     const key=(u,latitude,longitude,height,heading,pitch,ease='linear')=>
-      ({t:u*duration,lat:latitude,lon:longitude,height,heading,pitch,ease});
+      ({t:u*duration,lat:clamp(latitude,-89.9,89.9),lon:longitude,height,heading,pitch,ease});
     const frames=style==='orbit'||style==='pullback' ? [
       key(0,lat-.0013,lon-.0012,200,40,-60),
       key(.42,lat-.0015,lon+.0014,260,-38,-61,'smooth'),

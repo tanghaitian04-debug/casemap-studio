@@ -171,6 +171,20 @@
   function srt(project){
     return captions(project).map((cue,i)=>[i+1,stamp(cue.start)+' --> '+stamp(cue.end),cue.text].join('\n')).join('\n\n')+'\n';
   }
+  function draftCues(project){
+    for(const shot of project.scenes){
+      const parts=shot.narration.match(/[^。！？；]+[。！？；]?/g)?.map(s=>s.trim()).filter(Boolean).slice(0,24)||[];
+      if(!parts.length)continue;
+      const total=parts.reduce((sum,line)=>sum+line.length,0);
+      let length=0;
+      shot.subtitleCues=parts.map(line=>{
+        const start=length/total*shot.duration;
+        length+=line.length;
+        return {start,end:length/total*shot.duration,text:line.slice(0,240)};
+      });
+    }
+    return project;
+  }
   function narration(project){return sequence(project.scenes).map(s=>stamp(s.start)+'  '+s.title+'\n'+s.narration).join('\n\n')+'\n';}
   function storyboard(project){return sequence(project.scenes).map(({map,...shot})=>({...shot,...(map?{mapVersion:map.version}:{})}));}
   function pipeline(project) {
@@ -181,7 +195,7 @@
       ['配音',project.voice?'ready':'pending']
     ];
   }
-  const api={types,statuses,sequence,at,validate,migrate,plan,srt,narration,captions,storyboard,pipeline,titleScene};
+  const api={types,statuses,sequence,at,validate,migrate,plan,srt,narration,captions,storyboard,pipeline,titleScene,draftCues};
   if(typeof module==='object')module.exports=api;
   else root.CaseMapDocumentary=api;
 })(globalThis);

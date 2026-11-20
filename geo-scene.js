@@ -46,7 +46,7 @@
       this.widget.resize();
       const {lat,lon,height,heading,pitch}=Flight.sample(this.flight.frames,time);
       this.scene.camera.setView({
-        destination:C.Cartesian3.fromDegrees(lon,lat,height),
+        destination:C.Cartesian3.fromDegrees(lon,lat,this.aerial?height:Math.max(height,300000)),
         orientation:{heading:Flight.radians(heading),pitch:Flight.radians(pitch),roll:0}
       });
       this.widget.render();

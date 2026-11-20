@@ -1,7 +1,7 @@
 name: CI
 on:
   push:
-    branches: [main, codex/casemap-v11]
+    branches: [main, codex/casemap-v11, codex/casemap-v2]
   pull_request:
 permissions:
   contents: read
@@ -25,3 +25,7 @@ jobs:
       - run: npm run test:video
       - run: npm run test:parity
       - run: npm run test:private
+      - run: npm run test:film-browser
+      - run: node tests/film-private.mjs
+      - run: npm run render:geo -- --smoke --output out/geo-smoke.mp4
+      - run: npm run render:film -- --smoke --output out/film-smoke.mp4

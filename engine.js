@@ -356,7 +356,7 @@ class Engine {
     ctx.shadowColor='#000c'; ctx.shadowBlur=r*.65; ctx.shadowOffsetY=r*.25;
     if (actor.kind === 'car') {
       ctx.rotate(heading);
-      const length = actor.vehicle === 'suv' ? 1.9 : actor.vehicle === 'motorcycle' ? 1.08 : 1.68;
+      const length = actor.vehicle === 'pickup' ? 2.03 : actor.vehicle === 'suv' ? 1.9 : actor.vehicle === 'motorcycle' ? 1.08 : 1.68;
       const body = actor.vehicle === 'motorcycle' ? .38 : .66;
       if (avatar?.width) ctx.drawImage(avatar,-r*length,-r,r*length*2,r*2);
       else {

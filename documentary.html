@@ -49,21 +49,22 @@
      <label>帧率<select id="fps"><option value="24">24 fps</option><option value="30">30 fps</option><option value="60">60 fps</option></select></label></div>
     <label class="check"><input type="checkbox" id="reviewed">我已核对事实、画面和素材署名</label>
     <div class="actions"><button id="save-project" class="primary">下载可编辑项目 ZIP</button><label class="button">导入 JSON / ZIP<input id="import" type="file" accept=".json,.zip" hidden></label></div>
-    <div class="actions"><button id="save-board">分镜 JSON</button><button id="save-events">事件 JSON</button><button id="save-srt">字幕 SRT</button><button id="save-script">旁白稿</button><button id="save-sources">素材出处</button></div>
+    <div class="actions"><button id="save-board">分镜 JSON</button><button id="save-events">事件 JSON</button><button id="save-srt">字幕 SRT</button><button id="draft-subs">从旁白生成字幕</button><button id="save-script">旁白稿</button><button id="save-sources">素材出处</button></div>
     <details><summary>私有渲染 / AI</summary>
      <label>HTTPS 服务地址<input id="endpoint" type="url" autocomplete="off"></label>
      <label>访问口令<input id="token" type="password" autocomplete="off"></label>
+     <label>配音语速<input id="voice-speed" type="number" min=".85" max="1.2" step=".05" value="1"></label>
      <div class="actions"><button id="connect">连接并验证</button><button id="render" disabled>渲染整片 MP4</button><button id="voice" disabled>生成普通话旁白</button><button id="download-film" hidden>下载 MP4</button></div>
      <p class="muted">大文件上传到您连接的私有服务。AI 解析仅发送您填写的文字。配音仅发送旁白稿。第三方服务可能计费。</p>
     </details>
     <a href="https://github.com/tanghaitian04-debug/casemap-studio/actions/workflows/film.yml" target="_blank" rel="noopener">打开 GitHub Actions 公开素材备用渲染</a>
     <p class="muted">私有案件和原始录像使用私有服务或交给授权的 Codex 工作环境制作。</p>
-    <div id="pipeline"></div>
+    <p id="render-budget" class="muted"></p><div id="pipeline"></div>
    </section>
   </div>
  </div>
 </main>
 <script src="fflate.js"></script><script src="geo.js"></script><script src="project.js"></script><script src="flight.js"></script><script src="motion.js"></script>
-<script src="engine.js"></script><script src="documentary.js"></script><script src="film-pack.js"></script><script src="film-renderer.js"></script>
+<script src="project-package.js"></script><script src="engine.js"></script><script src="documentary.js"></script><script src="film-pack.js"></script><script src="film-renderer.js"></script>
 <script src="documentary-ui.js"></script>
 </body></html>
