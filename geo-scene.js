@@ -12,8 +12,8 @@
       if(!C)throw Error('CesiumJS 未加载');
       this.widget=new C.CesiumWidget(node,{
         baseLayer:false,terrainProvider:new C.EllipsoidTerrainProvider(),sceneMode:C.SceneMode.SCENE3D,
-        useDefaultRenderLoop:false,baseLayerPicker:false,skyBox:false,
-        contextOptions:{webgl:{alpha:false,preserveDrawingBuffer:true,antialias:true}}
+        useDefaultRenderLoop:false,baseLayerPicker:false,skyBox:false,scene3DOnly:true,msaaSamples:1,
+        contextOptions:{webgl:{alpha:false,preserveDrawingBuffer:true,antialias:false}}
       });
       this.scene=this.widget.scene;
       this.scene.backgroundColor=C.Color.fromCssColorString('#080d18');
@@ -23,6 +23,8 @@
       this.scene.globe.showGroundAtmosphere=true;
       this.scene.globe.lightingFadeOutDistance=200000000;
       this.scene.fog.enabled=false;
+      this.scene.msaaSamples=1;
+      this.scene.postProcessStages.fxaa.enabled=false;
       this.widget.clock.shouldAnimate=false;
       this.widget.clock.currentTime=C.JulianDate.fromIso8601('2024-08-12T17:30:00Z');
       this.aerial=false;
@@ -53,12 +55,10 @@
       if(!this.loaded)throw Error('地理图层未加载');
       this.step(time);
       const deadline=performance.now()+18000;
-      let complete=0;
-      while(complete<2) {
+      while(!this.scene.globe.tilesLoaded) {
         if(performance.now()>deadline)throw Error('Cesium 图层就绪超时');
         await new Promise(requestAnimationFrame);
         this.widget.render();
-        complete=this.scene.globe.tilesLoaded?complete+1:0;
       }
     }
     paint(ctx,w,h) { ctx.drawImage(this.scene.canvas,0,0,w,h); }
