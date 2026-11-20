@@ -91,3 +91,28 @@ body.full-preview .motion-tools, body.full-preview .quick-tools, body.full-previ
   color:#e9f5ff; background:#101d2b; border:1px solid #334d64; border-radius:7px;
 }
 #exportDialog { max-height:calc(100dvh - 26px); }
+
+body.full-preview .motion-tools { display:flex; position:static; }
+body.full-preview .motion-tools [data-tool] { display:none; }
+@media(max-width:820px) {
+  body[data-panel="preview"]:not(.full-preview) .workspace {
+    padding-bottom:calc(170px + env(safe-area-inset-bottom));
+  }
+  body[data-panel="preview"]:not(.full-preview) .motion-tools {
+    position:fixed;
+    z-index:7;
+    right:0;
+    left:0;
+    bottom:calc(57px + env(safe-area-inset-bottom));
+    margin:0;
+    padding:6px 8px;
+    background:#101b29;
+    border-top:1px solid #31455e;
+    grid-template-columns:repeat(5,minmax(0,1fr));
+  }
+  .motion-tools button { padding:5px 2px; min-width:0; font-size:11px; }
+  .motion-tools [data-tool="move"],.motion-tools [data-tool="nodes"] {
+    order:1;
+    grid-column:span 2;
+  }
+}
