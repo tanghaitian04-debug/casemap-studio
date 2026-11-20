@@ -1,6 +1,7 @@
 /* CaseMap Studio rendering engine — standalone Canvas2D, no network or paid API. */
 (function(global){
 'use strict';
+const Motion=typeof module==='object'?require('./motion.js'):global.CaseMapMotion;
 const clamp=(n,a,b)=>Math.max(a,Math.min(b,n));
 const lerp=(a,b,u)=>a+(b-a)*u;
 const smooth=(u)=>u*u*(3-2*u);
@@ -93,8 +94,8 @@ class Engine {
     return c;
   }
   viewport(t) {
-    const c=this.camera(t);
-    if (!this.project.map.keepInFrame) return c;
+    const c=this.previewCamera ? {...this.previewCamera} : this.camera(t);
+    if (this.previewCamera || !this.project.map.keepInFrame) return c;
     const {width:w,height:h}=this.canvas, angle=c.rotation*Math.PI/180;
     const cos=Math.abs(Math.cos(angle)), sin=Math.abs(Math.sin(angle));
     const tilt=Math.cos(c.tilt*Math.PI/180);
@@ -130,26 +131,80 @@ class Engine {
   drawMap(t){const {ctx,canvas}=this,w=canvas.width,h=canvas.height,c=this.viewport(t);ctx.save();ctx.fillStyle='#233b3e';ctx.fillRect(0,0,w,h);ctx.translate(w/2,h/2);ctx.scale(1,Math.cos(c.tilt*Math.PI/180));ctx.rotate(c.rotation*Math.PI/180);ctx.scale(c.zoom,c.zoom);ctx.translate(-c.x*w,-c.y*h);if(this.map?.width){ctx.drawImage(this.map,0,0,w,h);}else{ctx.fillStyle='#274a47';ctx.fillRect(0,0,w,h);for(let x=0;x<w;x+=60){ctx.strokeStyle='#496b66';ctx.beginPath();ctx.moveTo(x,0);ctx.lineTo(x,h);ctx.stroke();}}
     ctx.restore();ctx.fillStyle='#05111b17';ctx.fillRect(0,0,w,h);
   }
-  drawRoute(a,t){const pts=[...(a.points||[])].filter(p=>p.t<=t).sort((a,b)=>a.t-b.t);if(pts.length<2)return;const ctx=this.ctx;ctx.strokeStyle=hexToRgba(a.color,.85);ctx.lineWidth=Math.max(2,this.canvas.height*.003);ctx.lineJoin='round';ctx.beginPath();pts.forEach((p,i)=>{const [x,y]=this.worldToScreen(p.x,p.y,t);if(i===0)ctx.moveTo(x,y);else ctx.lineTo(x,y);});ctx.stroke();}
-  actorPosition(a,t){return interp(a.points||[],t,['x','y'],'smooth');}
-  drawActor(actor, t) {
-    if (!actor.points.length || t < (actor.start ?? Math.min(...actor.points.map(p => p.t))) || t >= (actor.end ?? Infinity)) return;
-    const { ctx, canvas } = this, { width: w, height: h } = canvas;
-    const p = this.actorPosition(actor,t), [x,y] = this.worldToScreen(p.x,p.y,t);
-    const r = clamp(h*.018*(actor.size || 1),8,h*.08);
-    const before = this.actorPosition(actor,t-.08), after = this.actorPosition(actor,t+.08);
-    let dx = (after.x-before.x)*w, dy = (after.y-before.y)*h;
-    const moving = Math.hypot(dx,dy) > .035;
-    if (!moving) {
-      const points = [...actor.points].sort((a,b) => a.t-b.t);
-      const segments = points.slice(1).map((p,i) => ({ t:p.t, dx:(p.x-points[i].x)*w, dy:(p.y-points[i].y)*h }))
-        .filter(seg => Math.hypot(seg.dx,seg.dy) > .01);
-      const nearest = segments.filter(seg => seg.t <= t).at(-1) ?? segments[0];
-      dx=nearest?.dx ?? 1; dy=nearest?.dy ?? 0;
+  drawRoute(actor,t,editing=false) {
+    const points=Motion.sorted(actor.points);
+    if (points.length<2 || (!editing && t<=points[0].t)) return;
+    const end=editing?points.at(-1).t:Math.min(t,points.at(-1).t);
+    const ctx=this.ctx, coords=[];
+    const screen=p=>this.worldToScreen(p.x,p.y,t);
+    for (let i=1;i<points.length && points[i-1].t<=end;i++) {
+      const a=points[i-1], b=points[i];
+      const stop=Math.min(end,b.t);
+      const steps=actor.route?8:1;
+      for(let step=0;step<=steps;step++) coords.push(screen(this.actorPosition(actor,a.t+(stop-a.t)*step/steps)));
     }
-    const direction = actor.heading === undefined ? Math.atan2(dy,dx) : actor.heading*Math.PI/180;
-    const camera = this.camera(t), rad = direction+camera.rotation*Math.PI/180;
-    const heading = Math.atan2(Math.sin(rad)*Math.cos(camera.tilt*Math.PI/180),Math.cos(rad));
+    ctx.save();
+    ctx.strokeStyle=hexToRgba(actor.color,editing?1:.76);
+    ctx.lineWidth=Math.max(editing?4:2,this.canvas.height*.0034);
+    ctx.lineJoin='round';
+    ctx.lineCap='round';
+    ctx.beginPath();
+    coords.forEach(([x,y],i)=>i?ctx.lineTo(x,y):ctx.moveTo(x,y));
+    ctx.stroke();
+    if (editing) {
+      ctx.fillStyle=ctx.strokeStyle;
+      for (let i=1;i<points.length;i++) {
+        const mid=(points[i-1].t+points[i].t)/2;
+        const [x,y]=screen(this.actorPosition(actor,mid)), [nx,ny]=screen(this.actorPosition(actor,mid+.015));
+        const angle=Math.atan2(ny-y,nx-x);
+        if(Math.hypot(nx-x,ny-y)<.01) continue;
+        ctx.save(); ctx.translate(x,y); ctx.rotate(angle);
+        ctx.beginPath(); ctx.moveTo(12,0); ctx.lineTo(-10,-7); ctx.lineTo(-10,7); ctx.closePath(); ctx.fill();
+        ctx.restore();
+      }
+    }
+    ctx.restore();
+  }
+  drawGuide(t,options) {
+    const ctx=this.ctx;
+    const actor=this.project.actors.find(a=>a.id===options.selectedActor);
+    if(actor) {
+      this.drawRoute(actor,t,true);
+      const points=Motion.sorted(actor.points);
+      points.forEach((point,i)=>{
+        const shown=options.guideOverride?.point===point?options.guideOverride.next:point;
+        const [x,y]=this.worldToScreen(shown.x,shown.y,t);
+        const current=point===options.selectedPoint || Math.abs(point.t-t)<.0005;
+        ctx.fillStyle=current?'#fff':actor.color||'#61ceff';
+        ctx.strokeStyle='#0b1523';
+        ctx.lineWidth=3;
+        ctx.beginPath(); ctx.arc(x,y,current?14:10,0,Math.PI*2); ctx.fill(); ctx.stroke();
+        if(i===0 || i===points.length-1) {
+          ctx.font='bold 17px "Noto Sans CJK SC",sans-serif';
+          ctx.fillStyle='#fff'; ctx.fillText(i===0?'起':'终',x+15,y-13);
+        }
+      });
+    }
+    if(options.draft?.length) {
+      ctx.strokeStyle='#51ccff'; ctx.lineWidth=5; ctx.lineJoin='round'; ctx.lineCap='round';
+      ctx.beginPath();
+      options.draft.forEach((p,i)=>{
+        const [x,y]=this.worldToScreen(p.x,p.y,t);
+        if(i)ctx.lineTo(x,y);else ctx.moveTo(x,y);
+      });
+      ctx.stroke();
+    }
+  }
+  actorPosition(a,t){return a.route ? Motion.routePosition(a,t) : interp(a.points||[],t,['x','y'],'smooth');}
+  drawActor(actor, t) {
+    const preview=this.actorPreview?.id===actor.id?this.actorPreview.point:null;
+    if (!preview && !Motion.visible(actor,t)) return;
+    const { ctx, canvas } = this, { width: w, height: h } = canvas;
+    const p = preview || this.actorPosition(actor,t), [x,y] = this.worldToScreen(p.x,p.y,t);
+    const r = clamp(h*.018*(actor.size || 1),8,h*.08);
+    const {angle,moving,motion}=Motion.heading(actor,t,at=>this.actorPosition(actor,at),w,h);
+    const camera=this.viewport(t), rad=angle+camera.rotation*Math.PI/180;
+    const heading=Math.atan2(Math.sin(rad)*Math.cos(camera.tilt*Math.PI/180),Math.cos(rad));
     const avatar = this.avatars[actor.id]?.image;
     const color = actor.color || '#54c7e9';
     ctx.save();
@@ -179,7 +234,7 @@ class Engine {
       if (avatar?.width) ctx.drawImage(avatar,-r,-r,2*r,2*r);
       else {
         ctx.fillStyle='#101f2b'; ctx.fillRect(-r,-r,2*r,2*r);
-        ctx.translate(0,moving && actor.motion!=='stop' ? Math.sin(t*(actor.motion==='run'?22:12))*r*.1 : 0);
+        ctx.translate(0,moving && motion!=='stop' ? Math.sin(t*(motion==='run'?22:12))*r*.1 : 0);
         ctx.fillStyle='#e9f3f7'; ctx.beginPath(); ctx.arc(0,-r*.25,r*.29,0,Math.PI*2); ctx.fill();
         drawRounded(ctx,-r*.45,r*.09,r*.9,r*.62,r*.23,'#e9f3f7');
       }
@@ -294,7 +349,7 @@ class Engine {
       this.drawEvents(t);
     }
     this.drawHUD(t);
-    if(options.editor&&options.selectedActor&&t>=intro){const a=(p.actors||[]).find(a=>a.id===options.selectedActor);if(a){ctx.save();for(const point of a.points||[]){const [x,y]=this.worldToScreen(point.x,point.y,t);ctx.fillStyle=point.t<=t?'#7fe3ff':'#fff9';ctx.strokeStyle='#07121c';ctx.lineWidth=2;ctx.beginPath();ctx.arc(x,y,7,0,Math.PI*2);ctx.fill();ctx.stroke();}ctx.restore();}}
+    if(options.editor&&t>=intro) this.drawGuide(t,options);
   }
 }
 global.CaseMapEngine={Engine,interp,clamp};

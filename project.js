@@ -49,6 +49,9 @@
       xy(item);
       time(item.t, '关键帧时间');
       optional(item.ease, v => require(curves.includes(v), '缓动'));
+      optional(item.note, v => string(v,120,'关键帧备注'));
+      optional(item.heading, v => number(v,-360,360,'关键帧朝向'));
+      optional(item.motion, v => require(['walk','run','stop'].includes(v),'动作状态'));
     };
     list(actors, 100, '对象轨道');
     const ids = new Set();
@@ -65,6 +68,13 @@
       optional(actor.heading, v => number(v, -360, 360, '对象朝向'));
       optional(actor.layer, v => number(v, -100, 100, '对象层级'));
       for (const k of ['start', 'end']) optional(actor[k], v => time(v, '对象显示时间'));
+      optional(actor.route, route => {
+        object(route,'运动路线');
+        number(route.curve,0,1,'路线圆滑程度');
+        number(route.steering,0,1,'路线转向平滑');
+        number(route.turnSlow,0,2,'转弯减速');
+        require(['linear','in','out'].includes(route.speed),'路线速度');
+      });
       list(actor.points, 500, '路径');
       actor.points.forEach(point);
     });

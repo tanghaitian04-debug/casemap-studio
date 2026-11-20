@@ -68,3 +68,40 @@ test('rule parser preserves order and labels inferred paths',()=>{
   assert.match(p.subtitle,/示意/);
   assert.throws(()=>script.parse(' ',format));
 });
+
+const Motion=require('../motion.js');
+test('traced route simplifies jitter, preserves turns and ends after eight seconds',()=>{
+  const path=[{x:.2,y:.2},{x:.24,y:.2002},{x:.4,y:.2},{x:.43,y:.34},{x:.52,y:.34}];
+  const nodes=Motion.compact(path,.004);
+  assert.equal(nodes.length,4);
+  const route={curve:.65,steering:.4,turnSlow:.6,speed:'linear'};
+  const points=Motion.schedule(nodes,2,8,route);
+  assert.equal(points[0].t,2);
+  assert.equal(points.at(-1).t,10);
+  const actor={points,route};
+  for(const {t,x,y} of points)assert.deepEqual(Motion.routePosition(actor,t),{x,y});
+  const pos=at=>Motion.routePosition(actor,at);
+  const sample=points[1].t;
+  const before=Motion.heading(actor,sample-.025,pos,1280,720);
+  const after=Motion.heading(actor,sample+.025,pos,1280,720);
+  assert.ok(Math.abs(before.angle-after.angle)<.4);
+  const changed=points[2];
+  const t=changed.t;
+  changed.x=.49;
+  assert.equal(pos(t).x,.49);
+  const retimed=Motion.schedule(nodes,2,12,{...route,speed:'in'});
+  assert.equal(retimed.at(-1).t,14);
+  assert.ok(retimed[1].t>2+(points[1].t-2)*1.5);
+});
+test('absolute-time keyframes update matching frame time without duplicates',()=>{
+  const points=[];
+  Motion.put(points,0,{x:.1,y:.2});
+  Motion.put(points,5,{x:.4,y:.4,ease:'linear'});
+  Motion.put(points,10,{x:.9,y:.6,ease:'linear'});
+  Motion.put(points,5,{x:.5,y:.4});
+  assert.deepEqual(points.map(p=>p.t),[0,5,10]);
+  const engine=Object.create(Engine.prototype);
+  assert.equal(engine.actorPosition({points},5).x,.5);
+  assert.equal(engine.actorPosition({points},10).x,.9);
+  assert.ok(Math.abs(engine.actorPosition({points},7).x-.66)<1e-9);
+});

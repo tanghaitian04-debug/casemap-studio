@@ -47,13 +47,53 @@
     </aside>
     <main class="main">
       <div class="preview-head"><div><span class="live-dot"></span><b>实时画面预览</b></div><div id="timecode" class="timecode">00:00.00 / 00:16.00</div></div>
-      <div class="canvas-wrap"><canvas id="preview" width="1280" height="720" aria-label="动画画布"></canvas><div class="canvas-hint" id="canvasHint">选择人物后，点击画面添加路径点；拖动已有路径点调整位置</div></div>
+      <div id="motionTools" class="motion-tools" aria-label="画布工具">
+        <button type="button" data-tool="select">选择</button>
+        <button type="button" data-tool="move">移动对象</button>
+        <button type="button" data-tool="draw">绘制路线</button>
+        <button type="button" data-tool="nodes">逐点路线</button>
+        <button type="button" data-tool="key">关键帧</button>
+        <button type="button" data-tool="pan">镜头</button>
+      </div>
+      <div class="canvas-wrap"><canvas id="preview" width="1280" height="720" aria-label="动画画布"></canvas></div>
+      <div class="quick-tools" id="motionQuick">
+        <strong id="motionObject"></strong>
+        <button type="button" id="autoKey" aria-pressed="false">自动关键帧：关闭</button>
+        <button type="button" id="editNodes" aria-pressed="false">拖动节点</button>
+        <button type="button" id="removeNode" disabled>删除节点</button>
+        <button type="button" id="saveView">记录镜头</button>
+        <button type="button" id="resetView">恢复画面</button>
+        <button type="button" id="undo" disabled>撤销</button>
+        <button type="button" id="redo" disabled>重做</button>
+        <span role="status" id="motionStatus"></span>
+      </div>
+      <div id="routeSettings" hidden class="route-settings">
+        <label>开始（秒）<input type="number" id="routeStart" min="0" step=".1" value="0"></label>
+        <label>时长（秒）<input type="number" id="routeDuration" min=".1" step=".1" value="8"></label>
+        <label>速度<select id="routeSpeed"><option value="linear">均匀</option><option value="in">加速</option><option value="out">减速</option></select></label>
+        <label>圆滑程度<input type="range" id="routeCurve" min="0" max="1" step=".05" value=".55"></label>
+        <label>转弯减速<input type="range" id="turnSlow" min="0" max="2" step=".1" value=".6"></label>
+        <label>转向平滑<input type="range" id="steering" min="0" max="1" step=".05" value=".4"></label>
+        <button type="button" id="routeApply">应用路线 / 更新时长</button>
+        <button type="button" id="routeCancel">丢弃未保存的路线</button>
+      </div>
       <div class="transport">
         <button id="btnBack" class="icon-btn" aria-label="上一帧">−1 帧</button><button id="btnPlay" class="play-btn">▶ 播放</button>
         <button id="btnForward" class="icon-btn" aria-label="下一帧">+1 帧</button><button id="btnLoop" class="icon-btn active">循环</button>
         <button id="btnPreview" class="icon-btn">全屏预览</button>
       </div>
       <div class="timeline">
+        <div class="timeline-actions">
+          <label>吸附<select id="timeSnap"><option value="frame">帧</option><option value="second">整秒</option></select></label>
+          <button type="button" id="multiKeys" aria-pressed="false">多选</button>
+          <button type="button" id="copyKeys">复制</button><button type="button" id="pasteKeys">粘贴</button>
+          <button type="button" id="noteKey" aria-expanded="false">关键帧备注</button>
+          <div id="keyNoteField" hidden class="route-settings">
+            <label>备注<input type="text" id="keyNote" maxlength="120"></label>
+            <label>动作<select id="keyMotion"><option value="">继承</option><option value="walk">行走</option><option value="run">奔跑</option><option value="stop">站立</option></select></label>
+            <label>站立朝向<input type="number" id="keyHeading" min="-360" max="360" placeholder="继承"></label>
+          </div>
+        </div>
         <div class="timeline-top"><b>多轨时间轴</b><label class="inline">缩放<input id="timelineZoom" type="range" min="1" max="4" step="1" value="1"></label></div>
         <input id="scrubber" aria-label="播放头" type="range" min="0" max="30" step="0.0333333" value="0">
         <div id="trackScroll"><div id="trackSurface"><div id="ruler" class="ruler"></div><div id="tracks"></div><div id="playhead" aria-hidden="true"></div></div></div>
@@ -123,7 +163,9 @@
   <div id="toast" role="status" aria-live="polite"></div>
   <script src="project.js"></script>
   <script src="script.js"></script>
+  <script src="motion.js"></script>
   <script src="engine.js"></script>
+  <script src="motion-editor.js"></script>
   <script src="app.js"></script>
 </body>
 </html>

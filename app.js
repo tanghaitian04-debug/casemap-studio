@@ -7,8 +7,18 @@
   const canvas = $('preview');
   const engine = new Engine(canvas);
   const easeLabels = { linear:'匀速', smooth:'缓入缓出', in:'加速', out:'减速', hold:'保持' };
-  let project, selected = '', time = 0, playback = null, loop = true, drag = null, full = false, notice;
+  let project, selected = '', time = 0, playback = null, loop = true, full = false, notice;
   let audioPlayers = [];
+  const Motion = window.CaseMapMotion;
+  const past=[], future=[];
+  let lastState=null, selectedPoint=null, keyClipboard=[], multi=false;
+  const chosenKeys=new Set();
+  const motion=window.CaseMapMotionEditor.mount({
+    canvas,engine,project:()=>project,actor:()=>actor(),time:()=>time,full:()=>full,render,seek,stop,select,
+    savePoint,saveCamera,selectPoint,
+    changed(){actorList();inspector();revised();}
+  });
+
   const actor = () => project?.actors.find(item => item.id === selected);
   const frameTime = t => clamp(Math.round(t * project.fps) / project.fps, 0, project.duration);
   const readNumber = (input, min, max, fallback = min) =>
@@ -50,30 +60,73 @@
       $('saveStatus').textContent = '请导出 JSON';
     }
   }
+  function historyButtons() {
+    $('undo').disabled=!past.length;
+    $('redo').disabled=!future.length;
+  }
   function revised() {
+    if(lastState) {
+      past.push(lastState);
+      if(past.length>45) past.shift();
+    }
+    lastState=structuredClone(project);
+    future.length=0;
+    historyButtons();
     persist();
     tracks();
+    motion.sync();
+    render();
+  }
+  function applyState(value,reset=false) {
+    stop();
+    project=structuredClone(value);
+    if(reset) { time=0; selected=''; }
+    else {
+      time=Math.min(time,project.duration);
+      if(!actor())selected='';
+    }
+    motion.reset();
+    selectedPoint=null;
+    chosenKeys.clear();
+    engine.setProject(project);
+    engine.ready().catch(error=>toast(error.message));
+    rebuildAudio();
+    refresh();
+    motion.sync();
+    persist();
     render();
   }
   function load(value) {
     format.validate(value);
-    stop();
-    project = value;
-    time = 0;
-    selected = '';
-    engine.setProject(project);
-    engine.ready().catch(error => toast(error.message));
-    rebuildAudio();
-    refresh();
-    revised();
+    applyState(value,true);
+    past.length=0; future.length=0;
+    lastState=structuredClone(project);
+    historyButtons();
   }
+  function history(from,to) {
+    if (!from.length) return;
+    to.push(lastState);
+    lastState=from.pop();
+    applyState(lastState);
+    historyButtons();
+  }
+  $('undo').onclick=()=>history(past,future);
+  $('redo').onclick=()=>history(future,past);
+  document.addEventListener('keydown',event=>{
+    if(!event.metaKey && !event.ctrlKey) return;
+    if(event.key.toLowerCase()!=='z' || event.target.matches('input,textarea,[contenteditable]')) return;
+    event.preventDefault();
+    if(event.shiftKey) history(future,past);
+    else history(past,future);
+  });
   function timecode(t) {
     const index = Math.floor(t * project.fps + .0001);
     return [Math.floor(t/60),Math.floor(t%60),index%project.fps].map(n => String(n).padStart(2,'0')).join(':');
   }
   function render() {
     if (!project) return;
-    engine.render(time, { editor: !full && !playback, selectedActor: selected });
+    const overlays=motion.overlays();
+    engine.render(time,{editor:!full&&!playback,selectedActor:selected,...overlays});
     $('timecode').textContent = timecode(time) + ' / ' + timecode(project.duration);
     $('scrubber').value = String(time);
     $('playhead').style.left = 'calc(102px + (100% - 102px) * ' + time/project.duration + ')';
@@ -110,6 +163,8 @@
     }
   }
   function play() {
+    motion.clearView();
+    motion.sync();
     if (playback) { stop(); render(); return; }
     if (time >= project.duration) time = 0;
     playback = { start: performance.now() - time * 1000, request: null };
@@ -163,10 +218,13 @@
     options($('camTarget'), [['','自由镜头'], ...project.actors.map(a => [a.id,a.name])], $('camTarget').value || '');
   }
   function select(id, edit = false) {
+    if(selected!==id) { selectedPoint=null; chosenKeys.clear(); }
     selected = id;
     actorList();
     inspector();
     if (edit) panel('edit');
+    motion.sync();
+    tracks();
     render();
   }
   function setEnd(input, value) {
@@ -229,6 +287,7 @@
     function reviseRows() {
       if (camera) cameraFields();
       else { actorList(); inspector(); }
+      if(!points.includes(selectedPoint)){chosenKeys.delete(selectedPoint);selectedPoint=null;}
       revised();
     }
   }
@@ -245,35 +304,175 @@
     $('camEase').value = key?.ease ?? 'smooth';
     keyRows($('cameraList'),project.camera,true);
   }
+  function selectPoint(point) {
+    selectedPoint=point || null;
+    if(point) {
+      $('keyNote').value=point.note || '';
+      $('keyMotion').value=point.motion || '';
+      $('keyHeading').value=point.heading ?? '';
+    }
+  }
+  $('noteKey').onclick=()=>{
+    if(!selectedPoint){toast('请先选中一个关键帧');return;}
+    const field=$('keyNoteField');
+    field.hidden=!field.hidden;
+    $('noteKey').setAttribute('aria-expanded',String(!field.hidden));
+  };
+  $('keyNote').onchange=e=>{
+    if(!selectedPoint)return;
+    selectedPoint.note=e.target.value;
+    revised();
+  };
+  $('keyMotion').onchange=e=>{
+    if(!actor()?.points.includes(selectedPoint))return;
+    if(e.target.value) selectedPoint.motion=e.target.value;
+    else delete selectedPoint.motion;
+    revised();
+  };
+  $('keyHeading').onchange=e=>{
+    if(!actor()?.points.includes(selectedPoint))return;
+    if(e.target.value) selectedPoint.heading=readNumber(e.target,-360,360,0);
+    else delete selectedPoint.heading;
+    revised();
+  };
+  $('multiKeys').onclick=()=>{
+    multi=!multi;
+    chosenKeys.clear();
+    $('multiKeys').setAttribute('aria-pressed',String(multi));
+    tracks();
+  };
+  let clipboardTrack='';
+  function trackKeys() {
+    if(actor()?.points.includes(selectedPoint))return actor().points;
+    if(project.camera.includes(selectedPoint))return project.camera;
+    return null;
+  }
+  $('copyKeys').onclick=()=>{
+    const source=trackKeys();
+    if(!source){toast('请先选中人物、车辆或镜头的关键帧');return;}
+    const group=source.filter(p=>chosenKeys.has(p));
+    keyClipboard=Motion.sorted(group.length?group:[selectedPoint]).map(p=>({...p}));
+    clipboardTrack=source===project.camera?'camera':'actor';
+    toast('已复制 '+keyClipboard.length+' 个关键帧');
+  };
+  $('pasteKeys').onclick=()=>{
+    if(!keyClipboard.length){toast('请先复制关键帧');return;}
+    const source=clipboardTrack==='camera'?project.camera:actor()?.points;
+    if(!source){toast('请选择目标对象');return;}
+    const first=keyClipboard[0].t;
+    const last=keyClipboard.at(-1).t;
+    if(time+(last-first)>project.duration){toast('粘贴时间超出项目长度');return;}
+    if(source.length+keyClipboard.length>500){toast('关键帧数量已达上限');return;}
+    chosenKeys.clear();
+    for(const {t,...values} of keyClipboard) chosenKeys.add(Motion.put(source,time+(t-first),values));
+    selectPoint([...chosenKeys][0]);
+    motion.highlight(clipboardTrack==='actor'?selectedPoint:null);
+    inspector();cameraFields();revised();
+  };
+  function snap(t) {
+    return $('timeSnap').value==='second'?clamp(Math.round(t),0,project.duration):frameTime(t);
+  }
+  function enableMarkerDrag(marker,strip,item,groupData,activate) {
+    let drag=null, ignoreClick=false;
+    marker.addEventListener('pointerdown',e=>{
+      if(e.button!==0)return;
+      drag={id:e.pointerId,x:e.clientX,width:strip.getBoundingClientRect().width,delta:0,moved:false};
+      try { marker.setPointerCapture(e.pointerId); } catch {}
+    });
+    marker.addEventListener('pointermove',e=>{
+      if(drag?.id!==e.pointerId)return;
+      const offset=e.clientX-drag.x;
+      if(!drag.moved && Math.abs(offset)<4)return;
+      drag.moved=true;
+      drag.delta=snap(item.t+offset/drag.width*project.duration)-item.t;
+      const target=clamp(item.t+drag.delta,0,project.duration);
+      marker.style.setProperty('--start',Math.min(99,target/project.duration*100)+'%');
+      marker.setAttribute('aria-label',target.toFixed(2)+' 秒');
+    });
+    marker.addEventListener('click',e=>{
+      if(ignoreClick){ignoreClick=false;return;}
+      activate(e);
+    });
+    const finish=(e,cancel=false)=>{
+      if(drag?.id!==e.pointerId)return;
+      const {moved,delta}=drag;
+      drag=null;
+      if(!moved)return;
+      ignoreClick=true;
+      if(cancel){tracks();return;}
+      const data=groupData(delta);
+      if(!data){tracks();toast('该位置与其他关键帧冲突或超出时间轴');return;}
+      if(data.actor) select(data.actor.id);
+      selectPoint(data.key);
+      motion.highlight(data.actor?data.key:null);
+      seek(data.time);
+      inspector();
+      revised();
+    };
+    marker.addEventListener('pointerup',finish);
+    marker.addEventListener('pointercancel',e=>finish(e,true));
+  }
   function tracks() {
-    const duration = project.duration;
-    const rows = [
-      ['地球开场',project.intro.duration ? [{ t:0,end:project.intro.duration }] : []],
-      ['摄像机',project.camera],
+    const duration=project.duration;
+    const rows=[
+      ['地球开场',project.intro.duration?[{t:0,end:project.intro.duration}]:[]],
+      ['摄像机',project.camera,null,'key'],
       ['地图背景',[{t:project.intro.duration,end:duration}]],
-      ...project.actors.map(a => [a.name || a.id,a.points,a]),
-      ['事件特效',project.events.map(e => ({t:e.t,end:e.t+(e.duration ?? 1.1)}))],
-      ['字幕', project.captions.map(c => ({t:c.start,end:c.end}))],
-      ['音效',(project.audio || []).map(c=>({t:c.start}))]
+      ...project.actors.map(a=>[a.name||a.id,a.points,a,'key']),
+      ['事件特效',project.events.map(e=>({t:e.t,end:e.t+(e.duration??1.1),ref:e})),null,'event'],
+      ['字幕',project.captions.map(c=>({t:c.start,end:c.end,ref:c})),null,'caption'],
+      ['音效',(project.audio||[]).map(c=>({t:c.start,ref:c})),null,'audio']
     ];
     $('ruler').replaceChildren(...Array.from({length:6},(_,i)=>element('span',(i*duration/5).toFixed(1)+' 秒')));
-    $('tracks').replaceChildren(...rows.map(([name,points,trackActor]) => {
-      const row=element('div',undefined,'track-row');
+    $('tracks').replaceChildren(...rows.map(([name,points,trackActor,kind])=>{
+      const row=element('div',undefined,'track-row'+(trackActor?.id===selected?' selected':''));
       const strip=element('div',undefined,'track-strip');
-      strip.onclick = e => {
-        if (e.target !== strip) return;
-        const box = strip.getBoundingClientRect();
-        if (trackActor) select(trackActor.id);
-        seek(frameTime((e.clientX-box.left)/box.width*duration));
+      strip.onclick=e=>{
+        if(e.target!==strip)return;
+        const rect=strip.getBoundingClientRect();
+        if(trackActor)select(trackActor.id);
+        seek(snap((e.clientX-rect.left)/rect.width*duration));
       };
-      for (const p of points) {
-        const marker=button('',() => { if (trackActor) select(trackActor.id); seek(p.t); },'track-marker');
-        const label = name+' '+p.t.toFixed(2)+' 秒';
-        marker.title = label;
+      for(const p of points) {
+        const marker=element('button',undefined,'track-marker'+(chosenKeys.has(p)||selectedPoint===p?' picked':''));
+        marker.type='button';
+        const label=name+' '+p.t.toFixed(2)+' 秒';
+        marker.title=p.note?label+' · '+p.note:label;
         marker.setAttribute('aria-label',label);
         marker.style.setProperty('--start',Math.min(99,p.t/duration*100)+'%');
         marker.style.setProperty('--width',Math.max(0,Math.min(duration-p.t,(p.end??p.t)-p.t))/duration*100+'%');
-        if (trackActor) marker.style.backgroundColor=trackActor.color || '#54c7e9';
+        if(trackActor)marker.style.backgroundColor=trackActor.color||'#54c7e9';
+        const activate=()=>{
+          if(trackActor && trackActor.id!==selected) select(trackActor.id);
+          if(kind==='key') {
+            if(multi && chosenKeys.has(p))chosenKeys.delete(p);
+            else {
+              if(!multi)chosenKeys.clear();
+              chosenKeys.add(p);
+            }
+            selectPoint(p);
+            motion.highlight(trackActor?p:null);
+          }
+          seek(p.t);
+          tracks();
+        };
+        if(!kind)marker.onclick=activate;
+        else enableMarkerDrag(marker,strip,p,delta=>{
+          if(kind==='key') {
+            const group=chosenKeys.has(p)?points.filter(item=>chosenKeys.has(item)):[p];
+            if(group.some(item=>item.t+delta<-.000001 || item.t+delta>duration+.000001 ||
+              points.some(other=>!group.includes(other)&&Math.abs(item.t+delta-other.t)<.0005)))return null;
+            for(const item of group)item.t=clamp(item.t+delta,0,duration);
+            return {time:p.t,key:p,actor:trackActor};
+          }
+          const end=p.end??p.t;
+          const start=clamp(p.t+delta,0,Math.max(0,duration-(end-p.t)));
+          if(kind==='event')p.ref.t=start;
+          else p.ref.start=start;
+          if(kind==='caption')p.ref.end=start+(end-p.t);
+          itemLists();
+          return {time:start};
+        },activate);
         strip.append(marker);
       }
       row.append(element('strong',name),strip);
@@ -346,58 +545,33 @@
     const item={id:crypto.randomUUID(),name:kind==='car'?'新车辆':'新人物',kind,
       color:kind==='car'?'#ee845e':'#58c9ec',points:[{t,x:.5,y:.5}]};
     project.actors.push(item);
-    select(item.id,true);
+    select(item.id);
+    panel('preview');
     itemLists();
     revised();
   }
   function savePoint(x,y) {
     const item=actor();
-    if (!item) return null;
+    if(!item)return null;
     const t=Math.max(time,project.intro.duration);
-    let point=item.points.find(p=>Math.abs(p.t-t)<.0005);
-    if (!point) { point={t}; item.points.push(point); }
-    Object.assign(point,{x,y});
+    const point=Motion.put(item.points,t,{x,y});
+    if(!point){toast('关键帧已达上限');return null;}
+    selectPoint(point);
+    motion.highlight(point);
     actorList();
     inspector();
     revised();
     return point;
   }
-  function pointerPosition(event) {
-    const rect=canvas.getBoundingClientRect();
-    return [(event.clientX-rect.left)/rect.width*canvas.width,(event.clientY-rect.top)/rect.height*canvas.height];
-  }
-  canvas.onpointerdown = event => {
-    if (full || !actor() || event.button!==0) return;
-    seek(Math.max(project.intro.duration,time));
-    const [x,y]=pointerPosition(event);
-    const hit=actor().points.find(p=>{
-      const [px,py]=engine.worldToScreen(p.x,p.y,time);
-      return Math.hypot(px-x,py-y)<(event.pointerType==='touch'?40:19);
-    });
-    drag={point:hit || savePoint(...engine.screenToWorld(x,y,time)),id:event.pointerId,cameraTime:time};
-    canvas.setPointerCapture(event.pointerId);
-  };
-  canvas.onpointermove = event => {
-    if (!drag || drag.id!==event.pointerId) return;
-    const [x,y]=engine.screenToWorld(...pointerPosition(event),drag.cameraTime);
-    Object.assign(drag.point,{x,y});
-    render();
-  };
-  canvas.onpointerup = canvas.onpointercancel = () => {
-    if (!drag) return;
-    drag=null;
-    inspector();
-    revised();
-  };
   const bound=(id,event,action)=>$(id).addEventListener(event, e=>{ if (project) action(e.target); });
   function setNumber(id, obj, key, min,max,fallback) {
     obj[key]=readNumber($(id),min,max,fallback);
     $(id).value=obj[key];
     revised();
   }
-  bound('projectTitle','input',input=>{ project.title=input.value; persist(); render(); });
-  bound('mapCredit','input',input=>{ project.map.credit=input.value; persist(); render(); });
-  bound('place','input',input=>{ project.intro.place=input.value; persist(); render(); });
+  bound('projectTitle','input',input=>{ project.title=input.value; revised(); });
+  bound('mapCredit','input',input=>{ project.map.credit=input.value; revised(); });
+  bound('place','input',input=>{ project.intro.place=input.value; revised(); });
   bound('latitude','change',()=>setNumber('latitude',project.intro,'latitude',-90,90,29));
   bound('longitude','change',()=>setNumber('longitude',project.intro,'end_longitude',-180,180,-81));
   bound('introDuration','change',()=>setNumber('introDuration',project.intro,'duration',0,project.duration,0));
@@ -447,18 +621,21 @@
     const p=actor().points.length ? engine.actorPosition(actor(),time) : {x:.5,y:.5};
     savePoint(p.x,p.y);
   };
-  $('btnCamera').onclick=()=>{
+  function saveCamera(view) {
     const point={
-      t:time,x:readNumber($('camX'),0,100,50)/100,y:readNumber($('camY'),0,100,50)/100,
-      zoom:readNumber($('camZoom'),.5,10,1),rotation:readNumber($('camRotation'),-360,360,0),
-      tilt:readNumber($('camTilt'),0,70,0),target:$('camTarget').value,ease:$('camEase').value
+      x:clamp(view.x,0,1),y:clamp(view.y,0,1),zoom:clamp(view.zoom,.5,10),
+      rotation:clamp(view.rotation,-360,360),tilt:clamp(view.tilt||0,0,70),
+      target:view.target||'',ease:view.ease||'smooth'
     };
-    const prior=project.camera.find(p=>Math.abs(p.t-time)<.0005);
-    if (prior) Object.assign(prior,point);
-    else project.camera.push(point);
+    if(!Motion.put(project.camera,time,point)){toast('镜头关键帧已达上限');return;}
     cameraFields();
     revised();
-  };
+  }
+  $('btnCamera').onclick=()=>saveCamera({
+    x:readNumber($('camX'),0,100,50)/100,y:readNumber($('camY'),0,100,50)/100,
+    zoom:readNumber($('camZoom'),.5,10,1),rotation:readNumber($('camRotation'),-360,360,0),
+    tilt:readNumber($('camTilt'),0,70,0),target:$('camTarget').value,ease:$('camEase').value
+  });
   $('btnEvent').onclick=()=>{
     const type=$('eventType').value;
     project.events.push({t:time,type,actor:selected,duration:type==='gunfire'?.35:1.1});
@@ -597,6 +774,7 @@
   options($('eventType'),Object.entries(format.effects),'alert');
   options($('camEase'),Object.entries(easeLabels),'smooth');
   panel('preview');
+  motion.setMode('select');
   (async()=>{
     const stored=format.restore(localStorage);
     try { load(stored || await demo()); }
