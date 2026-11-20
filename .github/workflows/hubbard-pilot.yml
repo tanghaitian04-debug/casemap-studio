@@ -1,0 +1,43 @@
+name: Render Hubbard COPA Review Pilot
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/hubbard-pilot.yml'
+      - 'examples/copa-2025-0001636-review-pilot.json'
+permissions:
+  contents: read
+jobs:
+  review-pilot:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 42
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+      - run: npm ci
+      - run: npm run build
+      - run: npx playwright install --only-shell --with-deps chromium
+      - run: sudo apt-get update && sudo apt-get install -y ffmpeg fonts-noto-cjk
+      - name: Check supplied case schema and human-review flag
+        run: |
+          node - <<'NODE'
+          const Film=require('./documentary.js');
+          const p=require('./examples/copa-2025-0001636-review-pilot.json');
+          Film.validate(p);
+          if(p.reviewed!==false)throw Error('Unreviewed case pilot must stay unreviewed');
+          console.log('Valid COPA review pilot, seconds:',Film.sequence(p.scenes).at(-1).end);
+          NODE
+      - name: Render 175-second source-labeled review pilot
+        run: |
+          npm run render:film -- --project examples/copa-2025-0001636-review-pilot.json --output output/hubbard-copa-review-pilot.mp4
+          node scripts/verify-frames.mjs output/hubbard-copa-review-pilot.mp4
+      - uses: actions/upload-artifact@v4
+        with:
+          name: hubbard-copa-review-pilot
+          path: output/
+          retention-days: 14
+          if-no-files-found: error
