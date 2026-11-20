@@ -11,7 +11,7 @@ DEMO=ROOT/'examples/demo.json'
 def project():return json.loads(DEMO.read_text(encoding='utf-8'))
 
 def test_demo_valid(project):
-    assert validate(project)==(1280,720,30,16.0)
+    assert validate(project)==(1280,720,30,30.0)
 
 def test_interpolate():
     points=[{'t':1,'x':0,'y':1},{'t':3,'x':1,'y':0}]
