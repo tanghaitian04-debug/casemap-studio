@@ -1,0 +1,440 @@
+{
+  "version": 2,
+  "title": "COPA 2025-0001636｜Hubbard 酒店枪击事件（审核样片）",
+  "fps": 30,
+  "width": 1920,
+  "sources": [
+    {
+      "id": "copa",
+      "title": "COPA 官方案件页",
+      "status": "verified",
+      "url": "https://www.chicagocopa.org/case/2025-0001636/",
+      "notes": "2025-04-07 14:23; 2026-10-01 公开；未列结案日期。",
+      "published": "",
+      "occurred": ""
+    },
+    {
+      "id": "press",
+      "title": "COPA 2026-10-01 新闻稿",
+      "status": "verified",
+      "url": "https://www.chicagocopa.org/press/copa-releases-video-other-materials-from-officer-involved-shooting-near-30-e-hubbard-st/",
+      "notes": "有在逃令、持刀、追逐、电击、两名警员开枪；官方初步说法。",
+      "published": "",
+      "occurred": ""
+    },
+    {
+      "id": "report",
+      "title": "CPD 案件报告 JJ209442",
+      "status": "verified",
+      "url": "https://www.chicagocopa.org/wp-content/uploads/2025/05/jj209442_-_ocir.Redacted.pdf",
+      "notes": "30 E Hubbard St；报告登记发生 14:23。",
+      "published": "",
+      "occurred": ""
+    },
+    {
+      "id": "arrest",
+      "title": "CPD 逮捕报告",
+      "status": "verified",
+      "url": "https://www.chicagocopa.org/wp-content/uploads/2025/05/williams_arrest_report.Redacted-2.pdf",
+      "notes": "逮捕登记14:32，不等于实际开枪时刻。",
+      "published": "",
+      "occurred": ""
+    },
+    {
+      "id": "outcome",
+      "title": "Chicago Sun-Times 后续报道",
+      "status": "verified",
+      "url": "https://chicago.suntimes.com/crime/2026/10/01/chicago-police-copa-shooting-demond-williams",
+      "notes": "后续报道：2025-07-26 去世，撤诉在去世前约一月，死因未公布。",
+      "published": "",
+      "occurred": ""
+    },
+    {
+      "id": "brief",
+      "title": "用户梗概中的待核实细节",
+      "status": "unverified",
+      "url": "",
+      "notes": "14:29:38–45、后巷及街面每次电击、7-Eleven 门牌、调度同步与撤退路线未逐帧核验。",
+      "published": "",
+      "occurred": ""
+    }
+  ],
+  "events": [
+    {
+      "event_id": "e1",
+      "start_time": null,
+      "end_time": null,
+      "location": "芝加哥 River North",
+      "actors": [],
+      "action": "警方接触已知有在逃令的人员，后发现其持刀逃离。",
+      "evidence": [
+        "press"
+      ],
+      "confidence": 0.9,
+      "verification_status": "verified",
+      "route_status": "illustrative",
+      "suggested_scene_type": "TitleScene"
+    },
+    {
+      "event_id": "e2",
+      "start_time": null,
+      "end_time": null,
+      "location": "Hubbard Street 周边",
+      "actors": [],
+      "action": "后巷垃圾箱对峙和电击情节有待逐段核实。",
+      "evidence": [
+        "brief",
+        "copa"
+      ],
+      "confidence": 0.35,
+      "verification_status": "unverified",
+      "route_status": "illustrative",
+      "suggested_scene_type": "TitleScene"
+    },
+    {
+      "event_id": "e3",
+      "start_time": null,
+      "end_time": null,
+      "location": "State Street",
+      "actors": [],
+      "action": "7-Eleven 穿行及具体门牌号须与视频校准。",
+      "evidence": [
+        "brief",
+        "outcome"
+      ],
+      "confidence": 0.35,
+      "verification_status": "unverified",
+      "route_status": "illustrative",
+      "suggested_scene_type": "TitleScene"
+    },
+    {
+      "event_id": "e4",
+      "start_time": null,
+      "end_time": null,
+      "location": "River North",
+      "actors": [],
+      "action": "街面电击的时间与失效原因尚待核实。",
+      "evidence": [
+        "brief",
+        "copa"
+      ],
+      "confidence": 0.35,
+      "verification_status": "unverified",
+      "route_status": "illustrative",
+      "suggested_scene_type": "TitleScene"
+    },
+    {
+      "event_id": "e5",
+      "start_time": null,
+      "end_time": null,
+      "location": "30 E Hubbard St",
+      "actors": [],
+      "action": "追逐进入 Courtyard 酒店，并在电梯区对峙。",
+      "evidence": [
+        "copa",
+        "outcome"
+      ],
+      "confidence": 0.9,
+      "verification_status": "verified",
+      "route_status": "illustrative",
+      "suggested_scene_type": "TitleScene"
+    },
+    {
+      "event_id": "e6",
+      "start_time": null,
+      "end_time": null,
+      "location": "酒店电梯区",
+      "actors": [],
+      "action": "警方实施电击，之后两名警员开枪；精确时间须逐帧核实。",
+      "evidence": [
+        "press",
+        "copa"
+      ],
+      "confidence": 0.9,
+      "verification_status": "verified",
+      "route_status": "illustrative",
+      "suggested_scene_type": "TitleScene"
+    },
+    {
+      "event_id": "e7",
+      "start_time": null,
+      "end_time": null,
+      "location": "酒店及医院",
+      "actors": [],
+      "action": "Williams 受伤送医，两警员送医观察。",
+      "evidence": [
+        "press"
+      ],
+      "confidence": 0.9,
+      "verification_status": "verified",
+      "route_status": "illustrative",
+      "suggested_scene_type": "TitleScene"
+    },
+    {
+      "event_id": "e8",
+      "start_time": null,
+      "end_time": null,
+      "location": "芝加哥",
+      "actors": [],
+      "action": "2025-07-26 去世；撤诉和死因属于后续报道。",
+      "evidence": [
+        "outcome"
+      ],
+      "confidence": 0.9,
+      "verification_status": "verified",
+      "route_status": "illustrative",
+      "suggested_scene_type": "TitleScene"
+    }
+  ],
+  "assets": {},
+  "scenes": [
+    {
+      "id": "intro",
+      "type": "TitleScene",
+      "title": "案件简介",
+      "duration": 9,
+      "caption": "COPA 2025-0001636 · 资料审核样片",
+      "narration": "这起案件发生在2025年4月7日的芝加哥 River North。本片是未配原始视频的审核样片，不能作为已完成案件还原。",
+      "event": null,
+      "evidence": [
+        "copa"
+      ],
+      "transition": "fade"
+    },
+    {
+      "id": "chicago",
+      "type": "GlobeScene",
+      "title": "美国·伊利诺伊州·芝加哥",
+      "duration": 12,
+      "caption": "酒店街区近似定位 · 不是高精度实景",
+      "narration": "从地球定位芝加哥 River North；此处使用全球地表贴图，目前尚未加载酒店街区的精细卫星影像。",
+      "evidence": [
+        "copa",
+        "report"
+      ],
+      "event": null,
+      "transition": "cut",
+      "flight": {
+        "lat": 41.8902,
+        "lon": -87.6277,
+        "label": "Chicago River North (near 30 E Hubbard; approximate)",
+        "frames": [
+          {
+            "t": 0,
+            "lat": 30.89,
+            "lon": -128.6277,
+            "height": 16600000,
+            "heading": 0,
+            "pitch": -88,
+            "ease": "linear"
+          },
+          {
+            "t": 2.4,
+            "lat": 37.89,
+            "lon": -102.6277,
+            "height": 5200000,
+            "heading": 0,
+            "pitch": -88,
+            "ease": "linear"
+          },
+          {
+            "t": 5.3,
+            "lat": 41.69,
+            "lon": -88.9077,
+            "height": 630000,
+            "heading": 0,
+            "pitch": -88,
+            "ease": "linear"
+          },
+          {
+            "t": 7.6,
+            "lat": 41.8422,
+            "lon": -87.5377,
+            "height": 28800,
+            "heading": 0,
+            "pitch": -88,
+            "ease": "linear"
+          },
+          {
+            "t": 9.7,
+            "lat": 41.8842,
+            "lon": -87.6227,
+            "height": 1470,
+            "heading": 0,
+            "pitch": -88,
+            "ease": "linear"
+          },
+          {
+            "t": 12,
+            "lat": 41.8902,
+            "lon": -87.6277,
+            "height": 350,
+            "heading": 0,
+            "pitch": -90,
+            "ease": "out"
+          }
+        ]
+      }
+    },
+    {
+      "id": "origin",
+      "type": "TitleScene",
+      "title": "接触的起因",
+      "duration": 15,
+      "caption": "警方发现已知有在逃令的人员",
+      "narration": "根据COPA新闻稿，警员注意到一名已知有在逃令的人员，后来发现他携带刀具，他随后逃离。不能虚构911报警作为本案起因。",
+      "event": "e1",
+      "evidence": [
+        "press"
+      ],
+      "transition": "cut"
+    },
+    {
+      "id": "alley",
+      "type": "TitleScene",
+      "title": "后巷与警员喊话",
+      "duration": 13,
+      "caption": "后巷具体站位与电击时间待核",
+      "narration": "资料梗概提到后巷垃圾箱与放刀喊话，但位置、对话与电击次数尚未与COPA各机位逐帧比对，因此不绘制确切路线。",
+      "event": "e2",
+      "evidence": [
+        "brief",
+        "copa"
+      ],
+      "transition": "cut"
+    },
+    {
+      "id": "store",
+      "type": "TitleScene",
+      "title": "State Street 便利店",
+      "duration": 13,
+      "caption": "7-Eleven 门牌 445/451 存在差异",
+      "narration": "部分案件材料称445号，其他新闻和商户资料写451号。当前只能将位置标为State Street便利店，不能误导观众为精确入口。",
+      "event": "e3",
+      "evidence": [
+        "brief"
+      ],
+      "transition": "cut"
+    },
+    {
+      "id": "taser",
+      "type": "TitleScene",
+      "title": "街面电击为何未能制止？",
+      "duration": 14,
+      "caption": "电击效果不能无证据归因",
+      "narration": "现场曾有警员提及衣物可能妨碍电击，但不同阶段的效果应依据执法视频及电击使用报告判断，不应提前断言唯一原因。",
+      "event": "e4",
+      "evidence": [
+        "brief",
+        "copa"
+      ],
+      "transition": "cut"
+    },
+    {
+      "id": "hotel",
+      "type": "TitleScene",
+      "title": "进入 Courtyard 酒店",
+      "duration": 15,
+      "caption": "30 E Hubbard St · 官方确认地点",
+      "narration": "追逐进入酒店并在电梯区域展开对峙。酒店内人员站位及行动顺序，必须以监控画面与执法记录仪确定。",
+      "event": "e5",
+      "evidence": [
+        "copa",
+        "outcome"
+      ],
+      "transition": "cut"
+    },
+    {
+      "id": "elevator",
+      "type": "TitleScene",
+      "title": "电梯厅多警员对峙",
+      "duration": 15,
+      "caption": "没有室内地理配准 · 当前画面不对应真实布局",
+      "narration": "这段是后续二维重建动画的目标镜头。当前样片尚未掌握可信的电梯厅平面图和人物站位，因此不制作假定的射击路线。",
+      "event": "e5",
+      "evidence": [
+        "copa"
+      ],
+      "transition": "cut"
+    },
+    {
+      "id": "shoot",
+      "type": "TitleScene",
+      "title": "最后数秒：电击与枪击",
+      "duration": 18,
+      "caption": "两名警员开枪已核实 · 秒级时间待核",
+      "narration": "COPA新闻稿确认曾使用电击设备，随后两名警员开枪。十四点二十九分三十八秒至四十五秒的精确区间必须同步不同摄像机时钟后才能使用。",
+      "event": "e6",
+      "evidence": [
+        "press",
+        "brief"
+      ],
+      "transition": "cut"
+    },
+    {
+      "id": "aid",
+      "type": "TitleScene",
+      "title": "枪击后实施救助",
+      "duration": 12,
+      "caption": "Williams 危重送医 · 两警员接受观察",
+      "narration": "Williams 中弹后被送往医院，情况危重。另有两名警员被送医观察。具体拖出电梯和急救细节需要对照真实画面。",
+      "event": "e7",
+      "evidence": [
+        "press"
+      ],
+      "transition": "cut"
+    },
+    {
+      "id": "radio",
+      "type": "TitleScene",
+      "title": "调度录音与多机位同步",
+      "duration": 13,
+      "caption": "COPA 列出 OEMC 1 和 OEMC 2",
+      "narration": "正式影片需要核对调度时间与各执法摄像机时间偏移。暂时不能把录音剪辑为已验证的绝对秒级现场时间线。",
+      "event": null,
+      "evidence": [
+        "copa"
+      ],
+      "transition": "cut"
+    },
+    {
+      "id": "outcome",
+      "type": "TitleScene",
+      "title": "后续：撤诉与去世",
+      "duration": 14,
+      "caption": "2025年7月26日去世 · 死因尚未公布",
+      "narration": "根据Chicago Sun-Times后续报道，相关刑事指控在去世前约一个月撤销。Williams于二零二五年七月二十六日去世，当时未公布死因和死亡方式。",
+      "event": "e8",
+      "evidence": [
+        "outcome"
+      ],
+      "transition": "cut"
+    },
+    {
+      "id": "credits",
+      "type": "TitleScene",
+      "title": "仍待核实的资料",
+      "duration": 12,
+      "caption": "无事前路人录像及911报警录音的可靠证据",
+      "narration": "未核实路径一律标记示意，不编造持刀原因，不添加无证据的911录音或事前路人拍摄画面。COPA案件页面目前没有列出调查结案日期。",
+      "event": null,
+      "evidence": [
+        "brief",
+        "copa"
+      ],
+      "transition": "cut"
+    }
+  ],
+  "reviewed": false,
+  "fictional": false,
+  "brief": {
+    "title": "芝加哥酒店持刀通缉犯遭警方开枪案",
+    "date": "2025-04-07",
+    "country": "美国",
+    "state": "Illinois",
+    "city": "Chicago",
+    "address": "30 E Hubbard St",
+    "requirements": "原始COPA视频未下载。不得声称枪击秒数已同步。不能虚构911报警、事前路人影像或持刀原因。黄色粗体字幕待开发。",
+    "story": "COPA 2025-0001636；警员识别已知存在在逃令的人员，发现持刀，对方逃离并进入酒店；警方使用电击设备，两警员开枪；后续媒体报道2025年7月26日去世。"
+  }
+}
