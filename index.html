@@ -16,7 +16,7 @@
       <button id="btnImport" class="btn subtle">导入项目</button>
       <button id="btnExportJson" class="btn subtle">保存 JSON</button>
       <button id="btnRecord" class="btn primary">导出视频</button>
-      <input id="importFile" type="file" accept="application/json,.json" hidden />
+      <input id="importFile" type="file" accept="application/json,application/zip,.json,.zip" hidden />
     </div>
   </header>
   <div class="workspace">
@@ -56,8 +56,10 @@
       <div class="panel-heading"><span class="section-dot"></span><b>动画对象</b><span class="smalltag" id="actorCount">0 OBJECTS</span></div>
       <div id="actorList" class="actor-list"></div>
       <div class="two-col"><button id="btnAddPerson" class="btn subtle">+ 添加人物</button><button id="btnAddCar" class="btn subtle">+ 添加车辆</button></div>
+      <button type="button" id="btnAddPolice" class="btn subtle wide">+ 添加警车</button>
       <div class="separator"></div>
       <div class="panel-heading"><span class="section-dot"></span><b>快速开始</b></div>
+      <button type="button" id="btnProjectZip" class="btn subtle wide">下载项目 ZIP</button>
       <button id="btnDemo" class="btn subtle wide">恢复演示项目</button>
       <button id="btnFrame" class="btn subtle wide">保存当前画面 PNG</button>
 
@@ -163,6 +165,8 @@
         <textarea id="brief" rows="5" placeholder="例如：警员接近车辆，车辆驶离，警车追逐，车辆停止。"></textarea>
         <button id="btnScript" class="btn accent wide">生成示意动画</button>
         <p class="helper">关键词规则生成。时间、位置及路线均待核实。</p>
+        <label id="aiConsent" hidden><input type="checkbox" id="allowAi">允许将这段文字发送给已连接的 AI 服务</label>
+        <button type="button" id="btnAiScript" class="btn accent wide" hidden>用 AI 整理动画草稿</button>
       </details>
     </aside>
   </div>
@@ -170,12 +174,27 @@
     <button type="button" data-panel="preview">预览</button><button type="button" data-panel="assets">项目与对象</button><button type="button" data-panel="edit">属性编辑</button>
   </nav>
   <dialog id="exportDialog"><div class="dialog-content">
-    <h2>云端导出 MP4</h2><p>视频使用当前项目的分辨率、帧率、时长和素材。</p>
+    <h2>云端导出 MP4</h2>
+    <div class="two-col">
+      <label>分辨率<select id="renderResolution"><option value="1280">720p</option><option value="1920">1080p</option></select></label>
+      <label>帧率<select id="renderFps"><option value="24">24 FPS</option><option value="30">30 FPS</option><option value="60">60 FPS</option></select></label>
+    </div>
     <label>视频文件名<input type="text" id="outputName" maxlength="60" value="case-map.mp4"></label>
-    <button id="btnRenderProject" class="btn primary wide">下载渲染项目 JSON</button>
-    <p>在 GitHub 上传该 JSON 到你有权限的分支。在 Actions 的 Render CaseMap MP4 中选择分支并填写文件路径。完成后在 Artifacts 下载 MP4。</p>
-    <p class="helper">公开分支里的项目及嵌入素材对外可见。敏感案件素材可在此对话交给 Codex 云端渲染。</p>
-    <a class="btn subtle wide" href="https://github.com/tanghaitian04-debug/casemap-studio/actions/workflows/render.yml" target="_blank" rel="noopener">打开 GitHub 渲染工作流</a>
+    <details>
+      <summary>连接私有渲染服务</summary>
+      <label>服务地址<input type="url" id="renderServer" placeholder="https://渲染服务域名" autocomplete="off"></label>
+      <label>访问密钥<input type="password" id="renderToken" autocomplete="off"></label>
+      <button type="button" id="cloudConnect" class="btn subtle wide">连接并验证</button>
+    </details>
+    <button type="button" id="cloudStart" class="btn primary wide" disabled>开始云端渲染</button>
+    <p id="cloudStatus" role="status" aria-live="polite">连接私有渲染服务后可直接提交。</p>
+    <button type="button" id="cloudVideo" class="btn primary wide" hidden>下载 MP4</button>
+    <details>
+      <summary>通过 GitHub Actions 手动渲染</summary>
+      <button id="btnRenderProject" class="btn subtle wide">下载渲染项目 JSON</button>
+      <p>仅将可公开的项目上传到 GitHub 分支。运行 Render CaseMap MP4，完成后在 Artifacts 下载。</p>
+      <a class="btn subtle wide" href="https://github.com/tanghaitian04-debug/casemap-studio/actions/workflows/render.yml" target="_blank" rel="noopener">打开 GitHub 渲染工作流</a>
+    </details>
     <form method="dialog"><button class="btn subtle wide">关闭</button></form>
   </div></dialog>
   <div id="toast" role="status" aria-live="polite"></div>
@@ -185,6 +204,10 @@
   <script src="motion.js"></script>
   <script src="engine.js"></script>
   <script src="motion-editor.js"></script>
+  <script src="fflate.js"></script>
+  <script src="draft-store.js"></script>
+  <script src="project-package.js"></script>
+  <script src="cloud-client.js"></script>
   <script src="app.js"></script>
 </body>
 </html>

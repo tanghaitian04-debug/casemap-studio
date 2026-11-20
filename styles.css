@@ -86,3 +86,8 @@ body.full-preview .motion-tools, body.full-preview .quick-tools, body.full-previ
   .track-marker::before { content:""; position:absolute; inset:-6px -10px; }
 }
 #routeDistance { color:#9fcfe4; align-self:center; font-size:12px; }
+.dialog-content input[type="url"],.dialog-content input[type="password"] {
+  display:block; width:100%; margin-top:7px; padding:10px; font-size:16px;
+  color:#e9f5ff; background:#101d2b; border:1px solid #334d64; border-radius:7px;
+}
+#exportDialog { max-height:calc(100dvh - 26px); }

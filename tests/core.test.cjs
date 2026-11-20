@@ -120,3 +120,21 @@ test('georeferencing round-trips Web Mercator and measures in real units',()=>{
   assert.throws(()=>format.validate({...project,map:{...project.map,bounds}}),/地理配准/);
   assert.doesNotThrow(()=>format.validate({...project,map:{credit:'Example',image:'data:image/png;base64,AA==',bounds}}));
 });
+
+const Pack=require('../project-package.js');
+const {unzipSync,zipSync}=require('fflate');
+test('ZIP keeps embedded media byte-for-byte and detects a missing asset',async()=>{
+  const project=format.empty();
+  project.map.image='data:image/png;base64,AAECAwQ=';
+  project.actors.push({id:'a',name:'A',kind:'person',avatar:project.map.image,points:[]});
+  const archive=await Pack.pack(project);
+  assert.deepEqual(await Pack.unpack(archive),project);
+  const files=unzipSync(archive);
+  const media=Object.keys(files).filter(k=>k.startsWith('media/'));
+  assert.equal(media.length,1);
+  delete files[media[0]];
+  await assert.rejects(()=>Pack.unpack(zipSync(files)),/素材缺失/);
+});
+test('project package retains V1 demo schema and original keyframe values',async()=>{
+  assert.deepEqual(await Pack.unpack(await Pack.pack(demo)),demo);
+});

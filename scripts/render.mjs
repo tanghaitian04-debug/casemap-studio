@@ -40,9 +40,11 @@ if (!output.endsWith('.mp4')) throw new Error('视频输出文件须使用 .mp4'
 await mkdir(dirname(output),{recursive:true});
 const scratch=await mkdtemp(join(tmpdir(),'casemap-frames-'));
 const temporary=join(dirname(output),'.casemap-'+process.pid+'.mp4');
+const progress=(stage,frames)=>console.log('CASEMAP_PROGRESS '+JSON.stringify({stage,frames,total:count}));
 let server, renderFrames;
 let browser, ffmpeg;
 try {
+  progress('preparing',0);
   if (values.native) {
     const { createCanvas, loadImage, GlobalFonts } = await import('@napi-rs/canvas');
     if (process.platform === 'linux') GlobalFonts.loadFontsFromDir('/usr/share/fonts/opentype/noto');
@@ -92,15 +94,18 @@ try {
   const done=once(ffmpeg,'close').then(([code])=>{if(code!==0)throw new Error('FFmpeg 编码失败：'+code);});
   done.catch(()=>{});
   const batch=8;
+  progress('rendering',0);
   for (let i=0;i<count;i+=batch) {
     const frames=await renderFrames(i,Math.min(batch,count-i));
     for (const frame of frames) {
       if (!ffmpeg.stdin.write(frame)) await Promise.race([once(ffmpeg.stdin,'drain'),done]);
     }
-    if (i===0 || i%120===0) console.log(`逐帧渲染 ${Math.min(i+batch,count)}/${count}`);
+    if (i===0 || i%48===0 || i+batch>=count)progress('rendering',Math.min(i+batch,count));
   }
+  progress('encoding',count);
   ffmpeg.stdin.end();
   await done;
+  progress('verifying',count);
   const report=JSON.parse(execFileSync('ffprobe',['-v','error','-count_frames','-show_streams','-show_format','-of','json',temporary]));
   const stream=report.streams.find(s=>s.codec_type==='video');
   if (!stream || stream.codec_name!=='h264' || stream.width!==width || stream.height!==height ||

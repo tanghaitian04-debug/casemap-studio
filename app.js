@@ -53,13 +53,53 @@
       if (node.tagName === 'BUTTON') node.setAttribute('aria-current', String(node.dataset.panel === name));
     });
   }
-  function persist() {
-    try {
-      format.save(localStorage, project);
-      $('saveStatus').textContent = '本机已保存';
-    } catch {
-      $('saveStatus').textContent = '请导出 JSON';
+  let saveSequence=0, savedSequence=0, pendingDraft=null, writing=false;
+  const draftKey='casemap-draft-v1-clock';
+  async function flushDraft() {
+    if(writing)return;
+    writing=true;
+    while(pendingDraft) {
+      const draft=pendingDraft;
+      pendingDraft=null;
+      try {
+        await window.CaseMapDrafts.write({project:draft.project,clock:draft.clock});
+        savedSequence=Math.max(savedSequence,draft.sequence);
+        if(draft.sequence===saveSequence)$('saveStatus').textContent='本机已保存';
+      } catch {
+        if(draft.sequence===saveSequence && savedSequence<draft.sequence){
+          $('saveStatus').textContent='草稿未保存，请下载项目';
+          toast('草稿无法存到浏览器，请下载项目 ZIP');
+        }
+      }
     }
+    writing=false;
+  }
+  function persist() {
+    const sequence=++saveSequence, clock=Date.now();
+    const snapshot=structuredClone(project);
+    const media=[project.map.image,...project.actors.map(a=>a.avatar||''),...(project.audio||[]).map(a=>a.source)];
+    if(media.reduce((n,x)=>n+x.length,0)<2_000_000) {
+      try {
+        format.save(localStorage,project);
+        localStorage.setItem(draftKey,String(clock));
+        savedSequence=sequence;
+      } catch {}
+    }
+    $('saveStatus').textContent=savedSequence===sequence?'本机已保存':'正在保存草稿…';
+    pendingDraft={project:snapshot,clock,sequence};
+    void flushDraft();
+  }
+  window.addEventListener('beforeunload',event=>{
+    if(saveSequence>savedSequence){event.preventDefault();event.returnValue='';}
+  });
+  async function recoverDraft() {
+    const local=format.restore(localStorage);
+    let remote=null;
+    try { remote=await window.CaseMapDrafts.read(); } catch {}
+    if(remote && (!local || remote.clock>=Number(localStorage.getItem(draftKey)||0))) {
+      try { return format.validate(remote.project); } catch {}
+    }
+    return local;
   }
   function historyButtons() {
     $('undo').disabled=!past.length;
@@ -547,9 +587,10 @@
       numeric('音量',c,'gain',1,0,1,.05)
     ]);
   }
-  function addActor(kind) {
+  function addActor(kind,vehicle) {
     const t=Math.max(time,project.intro.duration);
-    const item={id:crypto.randomUUID(),name:kind==='car'?'新车辆':'新人物',kind,
+    const item={id:crypto.randomUUID(),name:vehicle==='police'?'警车':kind==='car'?'新车辆':'新人物',kind,
+      ...(vehicle?{vehicle}:{}),
       color:kind==='car'?'#ee845e':'#58c9ec',points:[{t,x:.5,y:.5}]};
     project.actors.push(item);
     select(item.id);
@@ -656,6 +697,7 @@
   bound('actorMotion','change',input=>{ actor().motion=input.value; revised(); });
   $('btnAddPerson').onclick=()=>addActor('person');
   $('btnAddCar').onclick=()=>addActor('car');
+  $('btnAddPolice').onclick=()=>addActor('car','police');
   $('btnRemoveActor').onclick=()=>{
     project.actors=project.actors.filter(a=>a.id!==selected);
     project.events=project.events.filter(e=>e.actor!==selected);
@@ -770,8 +812,10 @@
     revised();
   });
   bindFile('btnImport','importFile',async file=>{
-    if (file.size>45_000_000) throw new Error('项目文件超过 45 MB');
-    load(JSON.parse(await file.text()));
+    if (file.size>50_000_000) throw new Error('项目文件超过 50 MB');
+    const value=file.name.toLowerCase().endsWith('.zip')?
+      await window.CaseMapPackage.unpack(await file.arrayBuffer()):JSON.parse(await file.text());
+    load(value);
     panel('preview');
     toast('项目已导入');
   });
@@ -784,17 +828,29 @@
     link.remove();
     setTimeout(()=>URL.revokeObjectURL(url),30000);
   }
-  function projectFile(outputName) {
+  function projectFile(outputName,options={}) {
     try {
       format.validate(project);
-      const content={...project,...(outputName ? {outputName} : {})};
+      const content={...project,...options,...(outputName ? {outputName} : {})};
       download(new Blob([JSON.stringify(content,null,2)],{type:'application/json'}),'casemap-project.json');
       toast('项目 JSON 已导出');
     } catch(error) { toast(error.message); }
   }
   $('btnExportJson').onclick=()=>projectFile();
-  $('btnRecord').onclick=()=>$('exportDialog').showModal();
-  $('btnRenderProject').onclick=()=>projectFile($('outputName').value.trim());
+  $('btnProjectZip').onclick=async()=>{
+    try {
+      await engine.ready();
+      const packageBytes=await window.CaseMapPackage.pack(project);
+      download(new Blob([packageBytes],{type:'application/zip'}),'casemap-project.zip');
+      toast('项目包已导出');
+    } catch(error) { toast(error.message); }
+  };
+  const cloud=window.CaseMapCloud.mount({
+    project:()=>project,ready:()=>engine.ready(),download,toast,
+    useProject(value){load(value);panel('preview');}
+  });
+  $('btnRecord').onclick=()=>cloud.open();
+  $('btnRenderProject').onclick=()=>projectFile($('outputName').value.trim(),cloud.options());
   $('btnFrame').onclick=()=>{engine.render(time);canvas.toBlob(blob=>{if(blob)download(blob,'casemap-frame.png');});render();};
   $('btnReset').onclick=()=>{ load(format.empty()); panel('assets'); toast('已创建新项目'); };
   async function demo() {
@@ -826,7 +882,7 @@
   panel('preview');
   motion.setMode('select');
   (async()=>{
-    const stored=format.restore(localStorage);
+    const stored=await recoverDraft();
     try { load(stored || await demo()); }
     catch(error) { load(format.empty());toast(error.message); }
   })();

@@ -1,17 +1,23 @@
 {
   "name": "casemap-studio",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "private": true,
   "scripts": {
     "build": "node scripts/build.mjs",
-    "lint": "node --check app.js && node --check engine.js && node --check project.js && node --check script.js && node --check scripts/render.mjs",
+    "lint": "node --check app.js && node --check engine.js && node --check project.js && node --check script.js && node --check scripts/render.mjs && node --check motion.js && node --check motion-editor.js && node --check geo.js && node --check cloud-client.js && node --check project-package.js && node --check draft-store.js && node --check server/private-render.mjs && node --check server/ai.mjs",
     "test": "node --test tests/core.test.cjs",
     "test:browser": "node tests/browser.mjs",
     "test:video": "node tests/video.mjs",
-    "render": "node scripts/render.mjs"
+    "render": "node scripts/render.mjs",
+    "test:private": "node tests/private-render.mjs",
+    "test:parity": "node tests/frame-parity.mjs",
+    "serve:private": "node server/private-render.mjs"
   },
   "devDependencies": {
     "@napi-rs/canvas": "^0.1.100",
     "playwright": "1.58.2"
+  },
+  "dependencies": {
+    "fflate": "^0.8.2"
   }
 }
