@@ -108,9 +108,9 @@ class Renderer:
         self.project=project;self.basedir=basedir
         self.w,self.h,self.fps,self.duration=validate(project)
         bgref=project.get('map',{}).get('image','assets/demo-map.jpg')
-        mapim=asset_image(bgref,basedir,Image.open(ROOT/'assets/demo-map.jpg').convert('RGB'))
+        mapim=asset_image(bgref,basedir,Image.open(ROOT/'assets/demo-map.webp').convert('RGB'))
         self.map=cv2.cvtColor(np.array(mapim.resize((self.w,self.h),Image.Resampling.LANCZOS)),cv2.COLOR_RGB2BGR)
-        earth=Image.open(ROOT/'assets/earth.png').convert('RGB')
+        earth=Image.open(ROOT/'assets/earth.webp').convert('RGB')
         self.earth=cv2.cvtColor(np.array(earth),cv2.COLOR_RGB2BGR)
         self.stars=make_stars(self.w,self.h)
         self.intro=float(project.get('intro',{}).get('duration',0))

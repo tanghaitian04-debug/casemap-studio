@@ -4,7 +4,7 @@
     { word: /接近|走向|靠近|approach/i, text: '人员接近车辆', name: '警员', kind: 'officer', move: true },
     { word: /逃跑|逃离|驶离|启动|flee|drive away/i, text: '车辆驶离', name: '涉事车辆', kind: 'car', move: true },
     { word: /追逐|追赶|跟随|pursue|chase/i, text: '车辆追逐', name: '警车', kind: 'car', move: true },
-    { word: /停车|停止|stop/i, text: '车辆停止', name: '涉事车辆', kind: 'car', move: false },
+    { word: /停车(?!场|位|区|区域)|停止|\bstop\b/i, text: '车辆停止', name: '涉事车辆', kind: 'car', move: false },
     { word: /下车|exit/i, text: '人员下车', name: '涉事人员', kind: 'suspect', move: true },
     { word: /开火|枪声|交火|gunfire/i, text: '记录提及枪声', effect: 'gunfire' }
   ];

@@ -1,0 +1,17 @@
+{
+  "name": "casemap-studio",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "build": "node scripts/build.mjs",
+    "lint": "node --check app.js && node --check engine.js && node --check project.js && node --check script.js && node --check scripts/render.mjs",
+    "test": "node --test tests/core.test.cjs",
+    "test:browser": "node tests/browser.mjs",
+    "test:video": "node tests/video.mjs",
+    "render": "node scripts/render.mjs"
+  },
+  "devDependencies": {
+    "@napi-rs/canvas": "^0.1.100",
+    "playwright": "1.58.2"
+  }
+}

@@ -13,7 +13,7 @@ const { validate } = require('../project.js');
 const { values } = parseArgs({ options:{
   project:{type:'string',default:'examples/demo.json'},output:{type:'string'},seconds:{type:'string'},
   width:{type:'string'},fps:{type:'string'},filename:{type:'string'},check:{type:'boolean'},
-  'report-dir':{type:'string',default:'output'}
+  'report-dir':{type:'string',default:'output'},native:{type:'boolean'}
 }});
 const path = await realpath(values.project);
 if (!path.startsWith(resolve('.')+sep) || !path.endsWith('.json')) throw new Error('项目必须是仓库内的 JSON 文件');
@@ -40,13 +40,33 @@ if (!output.endsWith('.mp4')) throw new Error('视频输出文件须使用 .mp4'
 await mkdir(dirname(output),{recursive:true});
 const scratch=await mkdtemp(join(tmpdir(),'casemap-frames-'));
 const temporary=join(dirname(output),'.casemap-'+process.pid+'.mp4');
-const server=await serve();
+let server, renderFrames;
 let browser, ffmpeg;
 try {
-  browser=await chromium.launch({executablePath:process.env.CASEMAP_CHROMIUM || undefined});
-  const page=await browser.newPage({viewport:{width,height}});
-  await page.goto(server.url+'/render.html');
-  await page.evaluate(scene=>window.prepareScene(scene),project);
+  if (values.native) {
+    const { createCanvas, loadImage, GlobalFonts } = await import('@napi-rs/canvas');
+    if (process.platform === 'linux') GlobalFonts.loadFontsFromDir('/usr/share/fonts/opentype/noto');
+    require('../engine.js');
+    const canvas=createCanvas(width,height);
+    const engine=new globalThis.CaseMapEngine.Engine(canvas,{
+      createCanvas:()=>createCanvas(1,1),
+      loadImage:ref=>loadImage(ref.startsWith('data:')?Buffer.from(ref.split(',')[1],'base64'):resolve('dist',ref))
+    });
+    engine.setProject(project);
+    await engine.ready();
+    renderFrames=(first,length)=>Array.from({length},(_,i)=>{
+      engine.render((first+i)/project.fps);
+      return canvas.toBuffer('image/jpeg',96);
+    });
+  } else {
+    server=await serve();
+    browser=await chromium.launch({executablePath:process.env.CASEMAP_CHROMIUM || undefined});
+    const page=await browser.newPage({viewport:{width,height}});
+    await page.goto(server.url+'/render.html');
+    await page.evaluate(scene=>window.prepareScene(scene),project);
+    renderFrames=async (i,length)=>(await page.evaluate(({i,length,fps})=>window.renderFrames(i,length,fps),
+      {i,length,fps:project.fps})).map(frame=>Buffer.from(frame,'base64'));
+  }
   const args=['-hide_banner','-loglevel','error','-y','-f','image2pipe','-framerate',String(project.fps),'-vcodec','mjpeg','-i','pipe:0'];
   for (const [i,clip] of (project.audio||[]).entries()) {
     let file;
@@ -73,10 +93,9 @@ try {
   done.catch(()=>{});
   const batch=8;
   for (let i=0;i<count;i+=batch) {
-    const frames=await page.evaluate(({i,length,fps})=>window.renderFrames(i,length,fps),
-      {i,length:Math.min(batch,count-i),fps:project.fps});
+    const frames=await renderFrames(i,Math.min(batch,count-i));
     for (const frame of frames) {
-      if (!ffmpeg.stdin.write(Buffer.from(frame,'base64'))) await Promise.race([once(ffmpeg.stdin,'drain'),done]);
+      if (!ffmpeg.stdin.write(frame)) await Promise.race([once(ffmpeg.stdin,'drain'),done]);
     }
     if (i===0 || i%120===0) console.log(`逐帧渲染 ${Math.min(i+batch,count)}/${count}`);
   }
@@ -93,7 +112,7 @@ try {
 } finally {
   if (ffmpeg && ffmpeg.exitCode===null) ffmpeg.kill();
   await browser?.close();
-  await server.close();
+  await server?.close();
   await rm(temporary,{force:true});
   await rm(scratch,{force:true,recursive:true});
 }

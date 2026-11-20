@@ -1,37 +1,7 @@
-# Codex instructions — CaseMap Studio
+# CaseMap Studio 开发说明
 
-This is a real, working static web editor + Python/FFmpeg video renderer. Read README.md and examples/demo.json before editing.
+保持 JSON version 1 兼容。项目坐标归一化到 0–1，时间用秒。预览和云端导出共用 engine.js。校验和脚本匹配在 project.js 和 script.js。
 
-## Primary task
+案件时间、移动路线、物件身份、公示照片和地图授权以用户核实的资料为准。未知路线标为示意，保留画面提示和版权署名。默认示例为松湾市虚构案例。
 
-When a user supplies a case description, create or update `examples/case.json` to tell the story using the V1 schema. Keep all map coordinates normalized [0,1], all times in seconds, and preserve compatibility with both `engine.js` and `render.py`.
-
-## Critical accuracy rules
-
-- Distinguish verified facts from illustrative reconstruction. Do not invent exact locations, timestamps, routes, identities, shot directions, or sequences when not provided or sourced.
-- If the user has not supplied lawful map imagery, use the bundled fictional demo map and explicitly label it fictional. Never claim it is an actual case location.
-- Keep `案件过程示意动画 · 非真实现场画面` visible in output.
-- Do not scrape Google Earth or other copyrighted map services or remove attributions.
-- Never copy another creator's original footage, likenesses, or map screenshots without rights.
-- Keep the map credit accurate and editable.
-
-## Implementation rules
-
-- Never change an unrelated GitHub repository, DNS record, or existing deployment.
-- Preserve V1 JSON keys and backward compatibility. For schema changes, update both renderers and tests.
-- Prefer using `examples/demo.json` as a template; add actors and events only for events supported by the supplied case facts.
-- If a user asks for natural-language automation, Codex should create the JSON directly; do not claim the webpage itself is connected to an LLM API.
-- Use provided local assets only; don't embed API keys or external map service tokens in the frontend.
-
-## Validation before commit
-
-```bash
-python -m pip install -r requirements.txt
-python render.py --project examples/case.json --check
-python render.py --project examples/case.json --preview 8 --output out/case-preview.png
-pytest -q
-```
-
-For full render: `python render.py --project examples/case.json --output out/case-map.mp4`.
-
-Explain any missing map images, portraits, timecodes, or other inputs. GitHub Actions `Render CaseMap MP4` exports the MP4 as a workflow artifact.
+提交前执行 npm run lint、npm test、npm run build。浏览器可用时执行 npm run test:browser。验证成片执行 npm run test:video，容器无浏览器时使用 CASEMAP_TEST_NATIVE=1。工作流仅部署 casemap-studio。

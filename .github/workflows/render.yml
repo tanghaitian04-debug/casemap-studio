@@ -1,0 +1,66 @@
+name: Render CaseMap MP4
+on:
+  workflow_dispatch:
+    inputs:
+      project_path:
+        description: '项目 JSON 在选定分支中的路径'
+        default: 'examples/demo.json'
+        type: string
+        required: true
+      resolution:
+        description: '覆盖宽度（留空使用项目设置）'
+        type: choice
+        options: ['', '1280', '1920']
+      fps:
+        description: '覆盖帧率（可留空）'
+        type: string
+      filename:
+        description: '覆盖 MP4 文件名（可留空）'
+        type: string
+      seconds:
+        description: '覆盖时长（可留空）'
+        type: string
+  push:
+    branches: [main]
+    paths:
+      - 'examples/demo.json'
+      - 'engine.js'
+      - 'scripts/render.mjs'
+      - '.github/workflows/render.yml'
+permissions:
+  contents: read
+jobs:
+  render:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npx playwright install --with-deps chromium
+      - run: sudo apt-get install -y ffmpeg fonts-noto-cjk
+      - run: npm run build
+      - name: Render and validate H.264
+        env:
+          PROJECT_PATH: ${{ inputs.project_path || 'examples/demo.json' }}
+          RENDER_WIDTH: ${{ inputs.resolution }}
+          RENDER_FPS: ${{ inputs.fps }}
+          RENDER_SECONDS: ${{ inputs.seconds }}
+          RENDER_NAME: ${{ inputs.filename }}
+        run: |
+          args=(--project "$PROJECT_PATH")
+          if [[ -n "$RENDER_WIDTH" ]]; then args+=(--width "$RENDER_WIDTH"); fi
+          if [[ -n "$RENDER_FPS" ]]; then args+=(--fps "$RENDER_FPS"); fi
+          if [[ -n "$RENDER_SECONDS" ]]; then args+=(--seconds "$RENDER_SECONDS"); fi
+          if [[ -n "$RENDER_NAME" ]]; then args+=(--filename "$RENDER_NAME"); fi
+          npm run render -- "${args[@]}"
+      - name: Upload verified MP4 and ffprobe report
+        uses: actions/upload-artifact@v4
+        with:
+          name: casemap-mp4
+          path: output/
+          if-no-files-found: error
+          retention-days: 14

@@ -20,23 +20,43 @@ function drawRounded(ctx,x,y,w,h,r,fill){ctx.fillStyle=fill;ctx.beginPath();ctx.
 function hexToRgba(hex,alpha=1){let s=String(hex||'#f04c60').replace('#','');if(s.length===3)s=[...s].map(x=>x+x).join('');return `rgba(${parseInt(s.slice(0,2),16)||0},${parseInt(s.slice(2,4),16)||0},${parseInt(s.slice(4,6),16)||0},${alpha})`;}
 function starSeed(i){let n=Math.sin(i*93.174+31.5)*43758.5453;return n-Math.floor(n);}
 class Engine {
-  constructor(canvas){
-    this.canvas=canvas;this.ctx=canvas.getContext('2d',{alpha:false});this.project=null;this.map=null;this.mapRef='';this.earth=null;this.earthData=null;this.avatars={};this.onReady=()=>{};
-    this.globeCanvas=document.createElement('canvas');this.globeCtx=this.globeCanvas.getContext('2d');
-    const earth=new Image();this.earthReady=new Promise((resolve,reject)=>{earth.onload=()=>{this.earth=earth;const c=document.createElement('canvas');c.width=earth.width;c.height=earth.height;const x=c.getContext('2d',{willReadFrequently:true});x.drawImage(earth,0,0);this.earthData=x.getImageData(0,0,c.width,c.height);resolve();this.onReady();};earth.onerror=reject;earth.src='assets/earth.webp';});
-    this.earthReady.catch(()=>{});
+  constructor(canvas, platform = {}) {
+    this.canvas = canvas;
+    this.ctx = canvas.getContext('2d', { alpha: false });
+    this.project = null;
+    this.mapRef = '';
+    this.avatars = {};
+    this.onReady = () => {};
+    this.loadImage = platform.loadImage || (ref => new Promise((resolve, reject) => {
+      const image = new Image();
+      image.onload = () => resolve(image);
+      image.onerror = () => reject(new Error('无法读取场景图片'));
+      image.src = ref;
+    }));
+    const create = platform.createCanvas || (() => document.createElement('canvas'));
+    this.globeCanvas = create();
+    this.globeCtx = this.globeCanvas.getContext('2d');
+    this.earthReady = this.loadImage('assets/earth.webp').then(earth => {
+      const surface = create();
+      [surface.width, surface.height] = [earth.width, earth.height];
+      const context = surface.getContext('2d', { willReadFrequently: true });
+      context.drawImage(earth, 0, 0);
+      this.earthData = context.getImageData(0, 0, surface.width, surface.height);
+      this.onReady();
+    });
+    this.earthReady.catch(() => {});
   }
   setProject(project) {
     this.project = project;
     const load = (ref, onload) => {
-      const image = new Image();
-      const ready = new Promise((resolve, reject) => {
-        image.onload = () => { resolve(image); onload(image); this.onReady(); };
-        image.onerror = () => reject(new Error('无法读取场景图片'));
+      const asset = { ref, image: null };
+      asset.ready = this.loadImage(ref).then(image => {
+        asset.image = image;
+        onload(image);
+        this.onReady();
       });
-      ready.catch(() => {});
-      image.src = ref;
-      return { ref, image, ready };
+      asset.ready.catch(() => {});
+      return asset;
     };
     const ref = project.map.image === 'assets/demo-map.jpg' ? 'assets/demo-map.webp' : project.map.image;
     if (this.mapRef !== ref) {
@@ -87,15 +107,15 @@ class Engine {
   drawStars(){const {ctx,canvas}=this,w=canvas.width,h=canvas.height;ctx.fillStyle='#06101b';ctx.fillRect(0,0,w,h);for(let i=0;i<260;i++){const x=starSeed(i+5)*w,y=starSeed(i+300)*h,s=starSeed(i+800)*1.5+.25;ctx.fillStyle=`rgba(220,239,250,${.3+starSeed(i+1200)*.6})`;ctx.fillRect(x,y,s,s);}}
   drawGlobe(t){const {ctx,canvas}=this,w=canvas.width,h=canvas.height,p=this.project,intro=p.intro||{},u=clamp(t/Math.max(.01,intro.duration||1),0,1);this.drawStars();const cx=w*.5,cy=h*.5,r=Math.min(w,h)*(.265+1.32*u**4);
     const glow=ctx.createRadialGradient(cx,cy,r*.75,cx,cy,r*1.25);glow.addColorStop(0,'#1a6b8b00');glow.addColorStop(.77,'#1686ad40');glow.addColorStop(1,'#2a8fbd00');ctx.fillStyle=glow;ctx.beginPath();ctx.arc(cx,cy,r*1.27,0,Math.PI*2);ctx.fill();
-    if(this.earthData){const size=Math.min(480,Math.max(128,Math.floor(r*2)));if(this.globeCanvas.width!==size){this.globeCanvas.width=size;this.globeCanvas.height=size;}const img=this.globeCtx.createImageData(size,size),dst=img.data,src=this.earthData.data,tw=this.earthData.width,th=this.earthData.height;
-      const lat0=lerp(8, Number(intro.latitude??29), smooth(u))*Math.PI/180,lon0=lerp(Number(intro.start_longitude??-145),Number(intro.end_longitude??-81),smooth(u))*Math.PI/180, distance=lerp(5,1.08,smooth(u)), cosLat=Math.cos(lat0), sinLat=Math.sin(lat0);
-      for(let yy=0;yy<size;yy++){const y=-(yy/(size-1)*2-1);for(let xx=0;xx<size;xx++){const x=xx/(size-1)*2-1,rr=x*x+y*y,idx=(yy*size+xx)*4;if(rr>1){dst[idx+3]=0;continue;}const rayX=x/Math.sqrt(distance*distance-1), rayY=y/Math.sqrt(distance*distance-1); const depth=(distance-Math.sqrt(Math.max(0,1-rr)))/(1+rayX*rayX+rayY*rayY);const ix=depth*rayX, iy=depth*rayY, z=distance-depth,lat=Math.asin(clamp(iy*cosLat+z*sinLat,-1,1)),lon=lon0+Math.atan2(ix,z*cosLat-iy*sinLat),sx=((Math.floor((lon/(2*Math.PI)+.5)*tw)%tw)+tw)%tw,sy=clamp(Math.floor((.5-lat/Math.PI)*th),0,th-1),srcidx=(sy*tw+sx)*4,light=clamp(.48+.60*(.38*x+.40*y+.75*z),.22,1.08);
+    if(this.earthData){const size=Math.min(450,Math.max(128,Math.floor(r*2)));if(this.globeCanvas.width!==size){this.globeCanvas.width=size;this.globeCanvas.height=size;}const img=this.globeCtx.createImageData(size,size),dst=img.data,src=this.earthData.data,tw=this.earthData.width,th=this.earthData.height;
+      const lat0=lerp(8, Number(intro.latitude??29), smooth(u))*Math.PI/180,lon0=lerp(Number(intro.start_longitude??-145),Number(intro.end_longitude??-81),smooth(u))*Math.PI/180, distance=lerp(5,1.08,smooth(u)), cosLat=Math.cos(lat0), sinLat=Math.sin(lat0), scale=1/Math.sqrt(distance*distance-1);
+      for(let yy=0;yy<size;yy++){const y=-(yy/(size-1)*2-1);for(let xx=0;xx<size;xx++){const x=xx/(size-1)*2-1,rr=x*x+y*y,idx=(yy*size+xx)*4;if(rr>1){dst[idx+3]=0;continue;}const rayX=x*scale, rayY=y*scale; const depth=(distance-Math.sqrt(Math.max(0,1-rr)))/(1+rayX*rayX+rayY*rayY);const ix=depth*rayX, iy=depth*rayY, z=distance-depth,lat=Math.asin(clamp(iy*cosLat+z*sinLat,-1,1)),lon=lon0+Math.atan2(ix,z*cosLat-iy*sinLat),sx=((Math.floor((lon/(2*Math.PI)+.5)*tw)%tw)+tw)%tw,sy=clamp(Math.floor((.5-lat/Math.PI)*th),0,th-1),srcidx=(sy*tw+sx)*4,light=clamp(.48+.60*(.38*x+.40*y+.75*z),.22,1.08);
         dst[idx]=src[srcidx]*light;dst[idx+1]=src[srcidx+1]*light;dst[idx+2]=src[srcidx+2]*light;dst[idx+3]=255;}}
       this.globeCtx.putImageData(img,0,0);ctx.drawImage(this.globeCanvas,cx-r,cy-r,r*2,r*2);
     }else{ctx.fillStyle='#155477';ctx.beginPath();ctx.arc(cx,cy,r,0,Math.PI*2);ctx.fill();}
     ctx.strokeStyle='#5ab7db';ctx.lineWidth=Math.max(2,w*.002);ctx.beginPath();ctx.arc(cx,cy,r,0,Math.PI*2);ctx.stroke();
   }
-  drawMap(t){const {ctx,canvas}=this,w=canvas.width,h=canvas.height,c=this.camera(t);ctx.save();ctx.fillStyle='#233b3e';ctx.fillRect(0,0,w,h);ctx.translate(w/2,h/2);ctx.scale(1,Math.cos(c.tilt*Math.PI/180));ctx.rotate(c.rotation*Math.PI/180);ctx.scale(c.zoom,c.zoom);ctx.translate(-c.x*w,-c.y*h);if(this.map?.complete&&this.map.naturalWidth){ctx.drawImage(this.map,0,0,w,h);}else{ctx.fillStyle='#274a47';ctx.fillRect(0,0,w,h);for(let x=0;x<w;x+=60){ctx.strokeStyle='#496b66';ctx.beginPath();ctx.moveTo(x,0);ctx.lineTo(x,h);ctx.stroke();}}
+  drawMap(t){const {ctx,canvas}=this,w=canvas.width,h=canvas.height,c=this.camera(t);ctx.save();ctx.fillStyle='#233b3e';ctx.fillRect(0,0,w,h);ctx.translate(w/2,h/2);ctx.scale(1,Math.cos(c.tilt*Math.PI/180));ctx.rotate(c.rotation*Math.PI/180);ctx.scale(c.zoom,c.zoom);ctx.translate(-c.x*w,-c.y*h);if(this.map?.width){ctx.drawImage(this.map,0,0,w,h);}else{ctx.fillStyle='#274a47';ctx.fillRect(0,0,w,h);for(let x=0;x<w;x+=60){ctx.strokeStyle='#496b66';ctx.beginPath();ctx.moveTo(x,0);ctx.lineTo(x,h);ctx.stroke();}}
     ctx.restore();ctx.fillStyle='#05111b17';ctx.fillRect(0,0,w,h);
   }
   drawRoute(a,t){const pts=[...(a.points||[])].filter(p=>p.t<=t).sort((a,b)=>a.t-b.t);if(pts.length<2)return;const ctx=this.ctx;ctx.strokeStyle=hexToRgba(a.color,.85);ctx.lineWidth=Math.max(2,this.canvas.height*.003);ctx.lineJoin='round';ctx.beginPath();pts.forEach((p,i)=>{const [x,y]=this.worldToScreen(p.x,p.y,t);if(i===0)ctx.moveTo(x,y);else ctx.lineTo(x,y);});ctx.stroke();}
@@ -127,7 +147,7 @@ class Engine {
       ctx.rotate(heading);
       const length = actor.vehicle === 'suv' ? 1.9 : actor.vehicle === 'motorcycle' ? 1.08 : 1.68;
       const body = actor.vehicle === 'motorcycle' ? .38 : .66;
-      if (avatar?.naturalWidth) ctx.drawImage(avatar,-r*length,-r,r*length*2,r*2);
+      if (avatar?.width) ctx.drawImage(avatar,-r*length,-r,r*length*2,r*2);
       else {
         drawRounded(ctx,-r*length,-r*body,r*length*2,r*body*2,r*.28,color);
         ctx.shadowBlur=0;
@@ -144,10 +164,10 @@ class Engine {
       ctx.shadowBlur=0;
       ctx.save();
       ctx.beginPath(); ctx.arc(0,0,r*.8,0,Math.PI*2); ctx.clip();
-      if (avatar?.naturalWidth) ctx.drawImage(avatar,-r,-r,2*r,2*r);
+      if (avatar?.width) ctx.drawImage(avatar,-r,-r,2*r,2*r);
       else {
         ctx.fillStyle='#101f2b'; ctx.fillRect(-r,-r,2*r,2*r);
-        ctx.translate(0,moving ? Math.sin(t*(actor.motion==='run'?22:12))*r*.1 : 0);
+        ctx.translate(0,moving && actor.motion!=='stop' ? Math.sin(t*(actor.motion==='run'?22:12))*r*.1 : 0);
         ctx.fillStyle='#e9f3f7'; ctx.beginPath(); ctx.arc(0,-r*.25,r*.29,0,Math.PI*2); ctx.fill();
         drawRounded(ctx,-r*.45,r*.09,r*.9,r*.62,r*.23,'#e9f3f7');
       }
