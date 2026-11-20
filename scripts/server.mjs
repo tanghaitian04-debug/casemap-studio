@@ -5,7 +5,9 @@ import { extname, resolve, sep } from 'node:path';
 const types = {
   '.html':'text/html; charset=utf-8','.css':'text/css; charset=utf-8',
   '.js':'text/javascript; charset=utf-8','.json':'application/json',
-  '.jpg':'image/jpeg','.png':'image/png','.webp':'image/webp'
+  '.jpg':'image/jpeg','.png':'image/png','.webp':'image/webp','.svg':'image/svg+xml','.wasm':'application/wasm',
+  '.ktx2':'image/ktx2','.mp4':'video/mp4','.ogg':'audio/ogg','.wav':'audio/wav','.mp3':'audio/mpeg',
+  '.woff2':'font/woff2','.md':'text/plain; charset=utf-8'
 };
 export async function sendStatic(req,res,directory='dist') {
   const root=resolve(directory);
