@@ -2,7 +2,8 @@ FROM node:22-bookworm-slim
 RUN apt-get update && apt-get install --no-install-recommends -y ffmpeg fonts-noto-cjk && rm -rf /var/lib/apt/lists/*
 WORKDIR /app
 COPY package*.json ./
-RUN npm ci
+ENV PLAYWRIGHT_BROWSERS_PATH=/opt/casemap-browsers
+RUN npm ci && npx playwright install --with-deps chromium
 COPY . .
 RUN npm run build && mkdir -p /app/output && chown node:node /app/output
 USER node

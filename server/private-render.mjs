@@ -7,10 +7,12 @@ import { basename, join, resolve } from 'node:path';
 import { spawn } from 'node:child_process';
 import { pathToFileURL } from 'node:url';
 import { parseBrief } from './ai.mjs';
+import { proposeFilm,speakFilm } from './film-agent.mjs';
 import { sendStatic } from '../scripts/server.mjs';
 
 const require=createRequire(import.meta.url);
 const {validate}=require('../project.js');
+const FilmPack=require('../film-pack.js');
 const sha=text=>createHash('sha256').update(text).digest();
 const json=(res,status,data)=>res.writeHead(status,{'Content-Type':'application/json; charset=utf-8'}).end(JSON.stringify(data));
 const stages=new Set(['preparing','rendering','encoding','verifying']);
@@ -18,8 +20,8 @@ const limit=48_000_000;
 const retention=12*60*60*1000;
 const fail=(message,status=400)=>Object.assign(new Error(message),{status});
 
-async function jsonBody(req,max) {
-  if(req.headers['content-type']?.split(';')[0]!=='application/json')throw fail('请求必须使用 JSON',415);
+async function rawBody(req,max,type) {
+  if(req.headers['content-type']?.split(';')[0]!==type)throw fail('上传格式须为 '+type,415);
   if(Number(req.headers['content-length'])>max)throw fail('上传超过大小限制',413);
   let size=0;
   const parts=[];
@@ -28,7 +30,11 @@ async function jsonBody(req,max) {
     if(size>max)throw fail('上传超过大小限制',413);
     parts.push(chunk);
   }
-  try{return JSON.parse(Buffer.concat(parts).toString('utf8'));}
+  return Buffer.concat(parts);
+}
+async function jsonBody(req,max){
+  const bytes=await rawBody(req,max,'application/json');
+  try{return JSON.parse(bytes.toString('utf8'));}
   catch{throw fail('项目 JSON 无法读取');}
 }
 function verifyMedia(project) {
@@ -74,7 +80,8 @@ export async function startPrivateRender(env=process.env) {
     },20*60*1000);
     try{
       await new Promise((complete,reject)=>{
-        child=spawn(process.execPath,['scripts/render.mjs','--native','--project',job.input,'--output',job.file],
+        const launch=job.mode==='film'?['scripts/render-film.mjs']:['scripts/render.mjs','--native'];
+        child=spawn(process.execPath,[...launch,'--project',job.input,'--output',job.file],
           {detached:true,stdio:['ignore','pipe','pipe']});
         let lines='',errors='';
         child.stdout.setEncoding('utf8').on('data',chunk=>{
@@ -82,6 +89,12 @@ export async function startPrivateRender(env=process.env) {
           let end;
           while((end=lines.indexOf('\n'))>=0){
             const line=lines.slice(0,end);lines=lines.slice(end+1);
+            if(job.mode==='film'){
+              if(line.startsWith('READY '))job.stage='rendering';
+              const progress=/^FRAME (\d+) (\d+)$/.exec(line);
+              if(progress){job.frames=Number(progress[1]);job.total=Number(progress[2]);job.stage='rendering';}
+              if(line.startsWith('VERIFIED '))job.stage='verifying';
+            }
             if(!line.startsWith('CASEMAP_PROGRESS '))continue;
             try{
               const p=JSON.parse(line.slice('CASEMAP_PROGRESS '.length));
@@ -127,6 +140,25 @@ export async function startPrivateRender(env=process.env) {
       }
       if(req.method==='OPTIONS'){res.writeHead(204).end();return;}
       if(!authorized(req)){json(res,401,{error:'访问密钥无效'});return;}
+      if(path==='/api/film/capabilities' && req.method==='GET'){
+        json(res,200,{render:true,ai:Boolean(env.OPENAI_API_KEY&&env.CASEMAP_AI_MODEL),
+          voice:Boolean(env.OPENAI_API_KEY&&env.CASEMAP_TTS_MODEL)});return;
+      }
+      if((path==='/api/film/plan'||path==='/api/film/voice') && req.method==='POST'){
+        if(aiBusy)throw fail('已有 AI 处理正在运行',429);
+        const data=await jsonBody(req,64_000);
+        if(aiBusy)throw fail('已有 AI 处理正在运行',429);
+        aiBusy=true;
+        try{
+          if(path.endsWith('plan'))json(res,200,{project:await proposeFilm(data,env)});
+          else {
+            const sound=await speakFilm(data,env);
+            res.writeHead(200,{'Content-Type':'audio/mpeg','Content-Length':sound.length}).end(sound);
+          }
+        }catch(error){throw fail(error.message,422);}
+        finally{aiBusy=false;}
+        return;
+      }
       if(path==='/api/capabilities' && req.method==='GET'){
         json(res,200,{render:true,ai:Boolean(env.OPENAI_API_KEY&&env.CASEMAP_AI_MODEL)});return;
       }
@@ -139,27 +171,38 @@ export async function startPrivateRender(env=process.env) {
         finally{aiBusy=false;}
         return;
       }
-      if(path==='/api/jobs'&&req.method==='POST'){
+      if((path==='/api/jobs'||path==='/api/film/jobs')&&req.method==='POST'){
         if(queue.length>=4 || jobs.size>=16)throw fail('任务队列已满，请稍后再试',429);
-        const {project}=await jsonBody(req,limit);
-        try {validate(project);verifyMedia(project);} catch(error){throw fail(error.message);}
+        const mode=path==='/api/film/jobs'?'film':'map';
+        let payload;
+        if(mode==='film'){
+          payload=await rawBody(req,110_000_000,'application/zip');
+          try{
+            const {project}=await FilmPack.unpack(payload);
+            if(!project.reviewed)throw Error('请先审核影片');
+          }catch(error){throw fail(error.message);}
+        } else {
+          const {project}=await jsonBody(req,limit);
+          try{validate(project);verifyMedia(project);}catch(error){throw fail(error.message);}
+          payload=JSON.stringify(project);
+        }
         if(queue.length>=4 || jobs.size>=16)throw fail('任务队列已满，请稍后再试',429);
         const id=randomUUID(), dir=join(directory,id);
-        const job={id,directory:dir,input:join(dir,'project.json'),file:join(dir,'video.mp4'),stage:'queued'};
+        const job={id,mode,directory:dir,input:join(dir,mode==='film'?'project.zip':'project.json'),file:join(dir,'video.mp4'),stage:'queued'};
         jobs.set(id,job);
         try{
           await mkdir(dir,{mode:0o700});
-          await writeFile(job.input,JSON.stringify(project),{mode:0o600,flag:'wx'});
+          await writeFile(job.input,payload,{mode:0o600,flag:'wx'});
         } catch(error){await cleanup(job);throw error;}
         queue.push(job);
         json(res,202,{id,stage:job.stage});
         void work();
         return;
       }
-      const match=/^\/api\/jobs\/([a-f0-9-]{36})(\/video)?$/.exec(path);
-      const job=match&&jobs.get(match[1]);
-      if(!job || req.method!=='GET'){json(res,404,{error:'任务不存在或已过期'});return;}
-      if(match[2]){
+      const match=/^\/api\/(film\/)?jobs\/([a-f0-9-]{36})(\/video)?$/.exec(path);
+      const job=match&&jobs.get(match[2]);
+      if(!job || (match[1]?'film':'map')!==job.mode || req.method!=='GET'){json(res,404,{error:'任务不存在或已过期'});return;}
+      if(match[3]){
         if(job.stage!=='done'){json(res,409,{error:'视频尚未完成'});return;}
         const size=(await stat(job.file)).size;
         res.writeHead(200,{'Content-Type':'video/mp4','Content-Length':size,
@@ -167,7 +210,8 @@ export async function startPrivateRender(env=process.env) {
         createReadStream(job.file).on('error',()=>res.destroy()).pipe(res);
         return;
       }
-      json(res,200,{stage:job.stage,frames:job.frames,total:job.total,error:job.error});
+      const filmStages={queued:'等待中',preparing:'准备素材',rendering:'渲染画面',verifying:'校验成片',done:'已完成',failed:'失败'};
+      json(res,200,{stage:job.mode==='film'?filmStages[job.stage]:job.stage,frames:job.frames,total:job.total,error:job.error});
     } catch(error) {
       if(res.headersSent){res.destroy();return;}
       json(res,error.status||500,{error:error.status?error.message:'服务器无法完成请求'});
