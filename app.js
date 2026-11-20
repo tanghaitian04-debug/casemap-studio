@@ -74,7 +74,9 @@
     }
     writing=false;
   }
+  const filmBridge=new URLSearchParams(location.search).has('filmEdit')&&Boolean(window.opener);
   function persist(snapshot=structuredClone(project)) {
+    if(filmBridge)return;
     const sequence=++saveSequence, clock=Date.now();
     const media=[project.map.image,...project.actors.map(a=>a.avatar||''),...(project.audio||[]).map(a=>a.source)];
     if(media.reduce((n,x)=>n+x.length,0)<2_000_000) {
@@ -882,8 +884,20 @@
   panel('preview');
   motion.setMode('select');
   (async()=>{
+    if(filmBridge)return;
     const stored=await recoverDraft();
     try { load(stored || await demo()); }
     catch(error) { load(format.empty());toast(error.message); }
   })();
+  if(filmBridge){
+    const button=document.createElement('button');
+    button.type='button';button.className='btn primary';button.textContent='保存回影片';
+    $('btnExportJson').after(button);
+    button.onclick=()=>{if(project){window.opener.postMessage({type:'casemap-edit-result',map:project},location.origin);toast('已发回影片工作台');}};
+    window.addEventListener('message',event=>{
+      if(event.origin!==location.origin||event.source!==window.opener||event.data?.type!=='casemap-edit-map')return;
+      try{load(event.data.map);}catch(error){toast(error.message);}
+    });
+    window.opener.postMessage({type:'casemap-edit-ready'},location.origin);
+  }
 })();

@@ -5,8 +5,8 @@ import { mkdir,rename,rm } from 'node:fs/promises';
 import { dirname, resolve } from 'node:path';
 import { serve } from './server.mjs';
 
-export async function renderVideo({pagePath,setup,frame,count,fps,width,height,output,audio}) {
-  const server=await serve();
+export async function renderVideo({pagePath,setup,frame,count,fps,width,height,output,audio,privateMedia}) {
+  const server=await serve('dist',privateMedia);
   let browser,encoder;
   const destination=resolve(output),temporary=destination+'.partial.mp4';
   try{

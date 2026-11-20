@@ -1,0 +1,941 @@
+{
+  "version": 2,
+  "title": "松湾市停车场交通事件",
+  "fps": 30,
+  "width": 1920,
+  "sources": [
+    {
+      "id": "brief",
+      "title": "原创虚构案例文字设定",
+      "published": "",
+      "occurred": "",
+      "url": "",
+      "notes": "巡查人员到达停车场。车辆驶离公共停车区，两车先后通过弯道。最后车辆停止，巡查人员在停车区外停下。",
+      "status": "illustrative"
+    },
+    {
+      "id": "geo-demo",
+      "title": "USDA NAIP 公共航拍 · 奥兰多地理演示",
+      "notes": "与松湾市虚构情节无关。地球为 NASA Earth Observatory Blue Marble。",
+      "published": "",
+      "occurred": "",
+      "url": "https://imagery.nationalmap.gov/arcgis/rest/services/USGSNAIPImagery/ImageServer",
+      "status": "verified"
+    },
+    {
+      "id": "sim-footage",
+      "title": "原创模拟录像",
+      "notes": "从 CaseMap Studio 自制地图与对象生成的示意机位。",
+      "published": "",
+      "occurred": "",
+      "url": "",
+      "status": "illustrative"
+    }
+  ],
+  "events": [
+    {
+      "event_id": "event-1",
+      "start_time": null,
+      "end_time": null,
+      "location": "松湾市 · 虚构地点",
+      "actors": [],
+      "action": "巡查人员到达停车场",
+      "evidence": [
+        "brief"
+      ],
+      "confidence": 0,
+      "verification_status": "illustrative",
+      "route_status": "illustrative",
+      "suggested_scene_type": "ReconstructionScene"
+    },
+    {
+      "event_id": "event-2",
+      "start_time": null,
+      "end_time": null,
+      "location": "松湾市 · 虚构地点",
+      "actors": [],
+      "action": "车辆驶离公共停车区，两车先后通过弯道",
+      "evidence": [
+        "brief"
+      ],
+      "confidence": 0,
+      "verification_status": "illustrative",
+      "route_status": "illustrative",
+      "suggested_scene_type": "ReconstructionScene"
+    },
+    {
+      "event_id": "event-3",
+      "start_time": null,
+      "end_time": null,
+      "location": "松湾市 · 虚构地点",
+      "actors": [],
+      "action": "最后车辆停止，巡查人员在停车区外停下",
+      "evidence": [
+        "brief"
+      ],
+      "confidence": 0,
+      "verification_status": "illustrative",
+      "route_status": "illustrative",
+      "suggested_scene_type": "ReconstructionScene"
+    }
+  ],
+  "assets": {
+    "simulation": {
+      "kind": "video",
+      "name": "原创建模模拟机位",
+      "rights": true,
+      "credit": "CaseMap Studio 原创模拟素材",
+      "builtin": "assets/simulation.mp4"
+    },
+    "public-park": {
+      "kind": "image",
+      "name": "奥兰多公园航拍",
+      "rights": true,
+      "credit": "USDA NAIP / USGS The National Map",
+      "builtin": "assets/geo/orlando-park.webp"
+    }
+  },
+  "reviewed": true,
+  "fictional": true,
+  "scenes": [
+    {
+      "id": "intro",
+      "type": "TitleScene",
+      "title": "松湾市停车场交通事件",
+      "duration": 4,
+      "caption": "虚构案例 · 制作流程演示",
+      "narration": "今天用一个虚构案例说明，停车场内的行动如何通过影像和地图相互补充。",
+      "evidence": [],
+      "event": null,
+      "transition": "fade"
+    },
+    {
+      "id": "location",
+      "type": "GlobeScene",
+      "title": "佛罗里达州 · 奥兰多",
+      "duration": 10,
+      "caption": "公开地理演示 · 与虚构案件无关",
+      "narration": "这段使用佛罗里达州奥兰多的公开航拍验证地理飞行。后续松湾市情节为虚构。",
+      "evidence": [
+        "geo-demo"
+      ],
+      "event": null,
+      "transition": "cut",
+      "flight": {
+        "lat": 28.5067,
+        "lon": -81.4832,
+        "label": "奥兰多 · Bill Frederick Park",
+        "frames": [
+          {
+            "t": 0,
+            "lat": 17.5067,
+            "lon": -122.4832,
+            "height": 16600000,
+            "heading": 3,
+            "pitch": -90,
+            "ease": "linear"
+          },
+          {
+            "t": 2,
+            "lat": 24.5067,
+            "lon": -96.4832,
+            "height": 5200000,
+            "heading": 0,
+            "pitch": -90,
+            "ease": "out"
+          },
+          {
+            "t": 4.4,
+            "lat": 28.3067,
+            "lon": -82.7632,
+            "height": 630000,
+            "heading": 5,
+            "pitch": -90,
+            "ease": "linear"
+          },
+          {
+            "t": 6.3,
+            "lat": 28.4587,
+            "lon": -81.3932,
+            "height": 28800,
+            "heading": -5,
+            "pitch": -89,
+            "ease": "linear"
+          },
+          {
+            "t": 8.100000000000001,
+            "lat": 28.5007,
+            "lon": -81.4782,
+            "height": 1470,
+            "heading": -2,
+            "pitch": -80,
+            "ease": "linear"
+          },
+          {
+            "t": 10,
+            "lat": 28.5067,
+            "lon": -81.4832,
+            "height": 350,
+            "heading": 0,
+            "pitch": -90,
+            "ease": "out"
+          }
+        ]
+      }
+    },
+    {
+      "id": "image",
+      "type": "ImageScene",
+      "title": "公共场所航拍资料",
+      "duration": 7,
+      "caption": "公开航拍 · 本地点与剧情无关",
+      "narration": "将街区全景放在叙事开头，观众能够先看明白道路和场地的大致分布。",
+      "evidence": [
+        "geo-demo"
+      ],
+      "event": null,
+      "transition": "fade",
+      "asset": "public-park",
+      "in": 0,
+      "x": 0,
+      "y": 0,
+      "zoom": 1.2
+    },
+    {
+      "id": "footage-a",
+      "type": "FootageScene",
+      "title": "模拟录像 · 停车区机位",
+      "duration": 10,
+      "caption": "巡查人员出现在停车区 · 模拟录像",
+      "narration": "此处用模拟机位展示人员进入停车区，右侧车辆随后移动。",
+      "evidence": [
+        "brief",
+        "sim-footage"
+      ],
+      "event": "event-1",
+      "transition": "cut",
+      "asset": "simulation",
+      "in": 0,
+      "x": 0,
+      "y": 0,
+      "zoom": 1.04,
+      "arrow": {
+        "x": 0.54,
+        "y": 0.62
+      }
+    },
+    {
+      "id": "map-a",
+      "type": "ReconstructionScene",
+      "title": "俯视图 · 车辆驶离",
+      "duration": 12,
+      "caption": "停车区出口及两车相对位置 · 示意",
+      "narration": "俯视角度能够解释两辆车的位置。此处的线条、时间与方向来自虚构场景设定。",
+      "evidence": [
+        "brief"
+      ],
+      "event": "event-2",
+      "transition": "cut",
+      "map": {
+        "version": 1,
+        "title": "松湾市停车场追逐事件",
+        "subtitle": "松湾市虚构示意 · 非真实执法画面",
+        "duration": 30,
+        "fps": 30,
+        "size": [
+          1280,
+          720
+        ],
+        "intro": {
+          "duration": 5,
+          "latitude": 35,
+          "start_longitude": -164,
+          "end_longitude": -86,
+          "place": "美国 · 虚构松湾市"
+        },
+        "map": {
+          "image": "assets/demo-map.jpg",
+          "keepInFrame": true,
+          "credit": "原创虚构示例地图"
+        },
+        "show_tracks": true,
+        "camera": [
+          {
+            "t": 0,
+            "x": 0.5,
+            "y": 0.55,
+            "zoom": 1.12,
+            "rotation": 0,
+            "ease": "smooth"
+          },
+          {
+            "t": 5,
+            "x": 0.5,
+            "y": 0.55,
+            "zoom": 1.12,
+            "rotation": 0,
+            "ease": "smooth"
+          },
+          {
+            "t": 8.9,
+            "x": 0.38,
+            "y": 0.73,
+            "zoom": 1.6,
+            "rotation": 0,
+            "ease": "smooth"
+          },
+          {
+            "t": 13,
+            "x": 0.38,
+            "y": 0.77,
+            "zoom": 1.45,
+            "rotation": 0,
+            "ease": "smooth"
+          },
+          {
+            "t": 17,
+            "x": 0.37,
+            "y": 0.8,
+            "zoom": 1.25,
+            "rotation": 0,
+            "ease": "smooth"
+          },
+          {
+            "t": 17.7,
+            "x": 0.32,
+            "y": 0.805,
+            "zoom": 1.45,
+            "rotation": 0,
+            "ease": "smooth",
+            "target": "sedan"
+          },
+          {
+            "t": 22.9,
+            "x": 0.21,
+            "y": 0.45,
+            "zoom": 1.5,
+            "rotation": 0,
+            "ease": "smooth",
+            "target": "sedan"
+          },
+          {
+            "t": 23,
+            "x": 0.19,
+            "y": 0.43,
+            "zoom": 1.54,
+            "rotation": 0,
+            "ease": "smooth"
+          },
+          {
+            "t": 27,
+            "x": 0.19,
+            "y": 0.42,
+            "zoom": 1.64,
+            "rotation": 0,
+            "ease": "smooth"
+          },
+          {
+            "t": 30,
+            "x": 0.19,
+            "y": 0.41,
+            "zoom": 1.5,
+            "rotation": 0,
+            "ease": "smooth"
+          }
+        ],
+        "actors": [
+          {
+            "id": "officer",
+            "name": "警员",
+            "kind": "officer",
+            "color": "#54c8f4",
+            "points": [
+              {
+                "t": 9,
+                "x": 0.36,
+                "y": 0.91,
+                "ease": "smooth"
+              },
+              {
+                "t": 11,
+                "x": 0.39,
+                "y": 0.88,
+                "ease": "smooth"
+              },
+              {
+                "t": 13,
+                "x": 0.43,
+                "y": 0.835,
+                "ease": "smooth"
+              },
+              {
+                "t": 15.5,
+                "x": 0.38,
+                "y": 0.87,
+                "ease": "smooth"
+              },
+              {
+                "t": 17,
+                "x": 0.32,
+                "y": 0.898,
+                "ease": "smooth"
+              }
+            ],
+            "end": 17
+          },
+          {
+            "id": "sedan",
+            "name": "涉事轿车",
+            "kind": "car",
+            "color": "#eb694c",
+            "points": [
+              {
+                "t": 5,
+                "x": 0.44,
+                "y": 0.83,
+                "ease": "smooth"
+              },
+              {
+                "t": 13,
+                "x": 0.44,
+                "y": 0.83,
+                "ease": "smooth"
+              },
+              {
+                "t": 15,
+                "x": 0.415,
+                "y": 0.804,
+                "ease": "smooth"
+              },
+              {
+                "t": 17,
+                "x": 0.32,
+                "y": 0.803,
+                "ease": "smooth"
+              },
+              {
+                "t": 19,
+                "x": 0.2,
+                "y": 0.807,
+                "ease": "smooth"
+              },
+              {
+                "t": 20,
+                "x": 0.185,
+                "y": 0.76,
+                "ease": "smooth"
+              },
+              {
+                "t": 21.5,
+                "x": 0.165,
+                "y": 0.6,
+                "ease": "smooth"
+              },
+              {
+                "t": 23,
+                "x": 0.143,
+                "y": 0.425,
+                "ease": "smooth"
+              }
+            ],
+            "vehicle": "sedan"
+          },
+          {
+            "id": "police",
+            "name": "警车",
+            "kind": "car",
+            "color": "#54acff",
+            "points": [
+              {
+                "t": 5,
+                "x": 0.32,
+                "y": 0.895,
+                "ease": "smooth"
+              },
+              {
+                "t": 17,
+                "x": 0.32,
+                "y": 0.895,
+                "ease": "smooth"
+              },
+              {
+                "t": 18,
+                "x": 0.32,
+                "y": 0.82,
+                "ease": "smooth"
+              },
+              {
+                "t": 19.9,
+                "x": 0.231,
+                "y": 0.824,
+                "ease": "smooth"
+              },
+              {
+                "t": 21,
+                "x": 0.198,
+                "y": 0.773,
+                "ease": "smooth"
+              },
+              {
+                "t": 22.5,
+                "x": 0.178,
+                "y": 0.62,
+                "ease": "smooth"
+              },
+              {
+                "t": 24.2,
+                "x": 0.16,
+                "y": 0.5,
+                "ease": "smooth"
+              }
+            ],
+            "vehicle": "police"
+          },
+          {
+            "id": "suspect",
+            "name": "涉事人员",
+            "kind": "suspect",
+            "color": "#fbbc62",
+            "points": [
+              {
+                "t": 24,
+                "x": 0.143,
+                "y": 0.425,
+                "ease": "smooth"
+              },
+              {
+                "t": 25.4,
+                "x": 0.177,
+                "y": 0.41,
+                "ease": "smooth"
+              },
+              {
+                "t": 27,
+                "x": 0.185,
+                "y": 0.385,
+                "ease": "smooth"
+              }
+            ],
+            "start": 24,
+            "motion": "walk"
+          }
+        ],
+        "events": [
+          {
+            "t": 5.2,
+            "type": "ring",
+            "duration": 2.3,
+            "actor": "sedan",
+            "color": "#71d6ee",
+            "size": 1.25,
+            "intensity": 0.74
+          },
+          {
+            "t": 24.4,
+            "type": "alert",
+            "duration": 2.4,
+            "actor": "suspect",
+            "color": "#ffe06c",
+            "size": 0.9
+          },
+          {
+            "t": 27.05,
+            "type": "shake",
+            "duration": 0.34,
+            "intensity": 0.37
+          },
+          {
+            "t": 27.9,
+            "type": "vignette",
+            "duration": 2.1,
+            "intensity": 0.64,
+            "color": "#101b29"
+          }
+        ],
+        "captions": [],
+        "audio": []
+      },
+      "in": 9
+    },
+    {
+      "id": "footage-b",
+      "type": "FootageScene",
+      "title": "模拟录像 · 第二段",
+      "duration": 11,
+      "caption": "车辆先后通过弯道 · 模拟录像",
+      "narration": "镜头回到模拟录像。随着两辆车驶离停车区，画面中的位置关系发生变化。",
+      "evidence": [
+        "brief",
+        "sim-footage"
+      ],
+      "event": "event-2",
+      "transition": "cut",
+      "asset": "simulation",
+      "in": 9,
+      "x": 0,
+      "y": 0,
+      "zoom": 1.04,
+      "mask": {
+        "x": 0.05,
+        "y": 0.04,
+        "w": 0.9,
+        "h": 0.91
+      },
+      "gain": 0.45
+    },
+    {
+      "id": "map-b",
+      "type": "MapScene",
+      "title": "俯视图 · 位置汇总",
+      "duration": 14,
+      "caption": "车辆停止 · 停车区外的位置关系示意",
+      "narration": "回到俯视图可以交代两辆车最后的相对位置。车辆的路线和镜头时间只用于演示剪辑流程。",
+      "evidence": [
+        "brief"
+      ],
+      "event": "event-3",
+      "transition": "cut",
+      "map": {
+        "version": 1,
+        "title": "松湾市停车场追逐事件",
+        "subtitle": "松湾市虚构示意 · 非真实执法画面",
+        "duration": 30,
+        "fps": 30,
+        "size": [
+          1280,
+          720
+        ],
+        "intro": {
+          "duration": 5,
+          "latitude": 35,
+          "start_longitude": -164,
+          "end_longitude": -86,
+          "place": "美国 · 虚构松湾市"
+        },
+        "map": {
+          "image": "assets/demo-map.jpg",
+          "keepInFrame": true,
+          "credit": "原创虚构示例地图"
+        },
+        "show_tracks": true,
+        "camera": [
+          {
+            "t": 0,
+            "x": 0.5,
+            "y": 0.55,
+            "zoom": 1.12,
+            "rotation": 0,
+            "ease": "smooth"
+          },
+          {
+            "t": 5,
+            "x": 0.5,
+            "y": 0.55,
+            "zoom": 1.12,
+            "rotation": 0,
+            "ease": "smooth"
+          },
+          {
+            "t": 8.9,
+            "x": 0.38,
+            "y": 0.73,
+            "zoom": 1.6,
+            "rotation": 0,
+            "ease": "smooth"
+          },
+          {
+            "t": 13,
+            "x": 0.38,
+            "y": 0.77,
+            "zoom": 1.45,
+            "rotation": 0,
+            "ease": "smooth"
+          },
+          {
+            "t": 17,
+            "x": 0.37,
+            "y": 0.8,
+            "zoom": 1.25,
+            "rotation": 0,
+            "ease": "smooth"
+          },
+          {
+            "t": 17.7,
+            "x": 0.32,
+            "y": 0.805,
+            "zoom": 1.45,
+            "rotation": 0,
+            "ease": "smooth",
+            "target": "sedan"
+          },
+          {
+            "t": 22.9,
+            "x": 0.21,
+            "y": 0.45,
+            "zoom": 1.5,
+            "rotation": 0,
+            "ease": "smooth",
+            "target": "sedan"
+          },
+          {
+            "t": 23,
+            "x": 0.19,
+            "y": 0.43,
+            "zoom": 1.54,
+            "rotation": 0,
+            "ease": "smooth"
+          },
+          {
+            "t": 27,
+            "x": 0.19,
+            "y": 0.42,
+            "zoom": 1.64,
+            "rotation": 0,
+            "ease": "smooth"
+          },
+          {
+            "t": 30,
+            "x": 0.19,
+            "y": 0.41,
+            "zoom": 1.5,
+            "rotation": 0,
+            "ease": "smooth"
+          }
+        ],
+        "actors": [
+          {
+            "id": "officer",
+            "name": "警员",
+            "kind": "officer",
+            "color": "#54c8f4",
+            "points": [
+              {
+                "t": 9,
+                "x": 0.36,
+                "y": 0.91,
+                "ease": "smooth"
+              },
+              {
+                "t": 11,
+                "x": 0.39,
+                "y": 0.88,
+                "ease": "smooth"
+              },
+              {
+                "t": 13,
+                "x": 0.43,
+                "y": 0.835,
+                "ease": "smooth"
+              },
+              {
+                "t": 15.5,
+                "x": 0.38,
+                "y": 0.87,
+                "ease": "smooth"
+              },
+              {
+                "t": 17,
+                "x": 0.32,
+                "y": 0.898,
+                "ease": "smooth"
+              }
+            ],
+            "end": 17
+          },
+          {
+            "id": "sedan",
+            "name": "涉事轿车",
+            "kind": "car",
+            "color": "#eb694c",
+            "points": [
+              {
+                "t": 5,
+                "x": 0.44,
+                "y": 0.83,
+                "ease": "smooth"
+              },
+              {
+                "t": 13,
+                "x": 0.44,
+                "y": 0.83,
+                "ease": "smooth"
+              },
+              {
+                "t": 15,
+                "x": 0.415,
+                "y": 0.804,
+                "ease": "smooth"
+              },
+              {
+                "t": 17,
+                "x": 0.32,
+                "y": 0.803,
+                "ease": "smooth"
+              },
+              {
+                "t": 19,
+                "x": 0.2,
+                "y": 0.807,
+                "ease": "smooth"
+              },
+              {
+                "t": 20,
+                "x": 0.185,
+                "y": 0.76,
+                "ease": "smooth"
+              },
+              {
+                "t": 21.5,
+                "x": 0.165,
+                "y": 0.6,
+                "ease": "smooth"
+              },
+              {
+                "t": 23,
+                "x": 0.143,
+                "y": 0.425,
+                "ease": "smooth"
+              }
+            ],
+            "vehicle": "sedan"
+          },
+          {
+            "id": "police",
+            "name": "警车",
+            "kind": "car",
+            "color": "#54acff",
+            "points": [
+              {
+                "t": 5,
+                "x": 0.32,
+                "y": 0.895,
+                "ease": "smooth"
+              },
+              {
+                "t": 17,
+                "x": 0.32,
+                "y": 0.895,
+                "ease": "smooth"
+              },
+              {
+                "t": 18,
+                "x": 0.32,
+                "y": 0.82,
+                "ease": "smooth"
+              },
+              {
+                "t": 19.9,
+                "x": 0.231,
+                "y": 0.824,
+                "ease": "smooth"
+              },
+              {
+                "t": 21,
+                "x": 0.198,
+                "y": 0.773,
+                "ease": "smooth"
+              },
+              {
+                "t": 22.5,
+                "x": 0.178,
+                "y": 0.62,
+                "ease": "smooth"
+              },
+              {
+                "t": 24.2,
+                "x": 0.16,
+                "y": 0.5,
+                "ease": "smooth"
+              }
+            ],
+            "vehicle": "police"
+          },
+          {
+            "id": "suspect",
+            "name": "涉事人员",
+            "kind": "suspect",
+            "color": "#fbbc62",
+            "points": [
+              {
+                "t": 24,
+                "x": 0.143,
+                "y": 0.425,
+                "ease": "smooth"
+              },
+              {
+                "t": 25.4,
+                "x": 0.177,
+                "y": 0.41,
+                "ease": "smooth"
+              },
+              {
+                "t": 27,
+                "x": 0.185,
+                "y": 0.385,
+                "ease": "smooth"
+              }
+            ],
+            "start": 24,
+            "motion": "walk"
+          }
+        ],
+        "events": [
+          {
+            "t": 5.2,
+            "type": "ring",
+            "duration": 2.3,
+            "actor": "sedan",
+            "color": "#71d6ee",
+            "size": 1.25,
+            "intensity": 0.74
+          },
+          {
+            "t": 24.4,
+            "type": "alert",
+            "duration": 2.4,
+            "actor": "suspect",
+            "color": "#ffe06c",
+            "size": 0.9
+          },
+          {
+            "t": 27.05,
+            "type": "shake",
+            "duration": 0.34,
+            "intensity": 0.37
+          },
+          {
+            "t": 27.9,
+            "type": "vignette",
+            "duration": 2.1,
+            "intensity": 0.64,
+            "color": "#101b29"
+          }
+        ],
+        "captions": [],
+        "audio": []
+      },
+      "in": 17
+    },
+    {
+      "id": "closing",
+      "type": "TitleScene",
+      "title": "资料与示意范围",
+      "duration": 10,
+      "caption": "模拟录像、路径和案件经过均为原创虚构",
+      "narration": "完整影片交替使用地理镜头、模拟录像和二维解释图。真实案件应按照可以查证的资料完成审核。",
+      "evidence": [],
+      "event": null,
+      "transition": "fade"
+    }
+  ],
+  "brief": {
+    "title": "松湾市停车场交通事件",
+    "date": "",
+    "country": "美国（示意）",
+    "state": "",
+    "city": "",
+    "address": "",
+    "requirements": "",
+    "story": "巡查人员到达停车场。车辆驶离公共停车区，两车先后通过弯道。最后车辆停止，巡查人员在停车区外停下。"
+  }
+}

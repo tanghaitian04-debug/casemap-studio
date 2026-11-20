@@ -1,0 +1,69 @@
+<!doctype html>
+<html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>CaseMap Studio · 纪录片工作台</title>
+<link rel="stylesheet" href="documentary.css"><link rel="stylesheet" href="cesium/Widgets/widgets.css"></head>
+<body>
+<header class="top"><a href="./">CaseMap Studio</a><strong>纪录片工作台</strong><button id="load-demo">载入虚构案例</button></header>
+<main>
+ <div class="layout">
+  <div>
+   <section>
+    <h1>自动制作案件影片</h1>
+    <div class="fields">
+     <label>案件名称<input id="title" maxlength="160"></label><label>日期<input id="date" type="date"></label>
+     <label>国家<input id="country" value="美国"></label><label>州<input id="state" placeholder="Florida"></label>
+     <label>城市<input id="city" placeholder="Orlando"></label><label>详细地址<input id="address"></label>
+     <label>纬度<input id="latitude" type="number" min="-85" max="85" step="any" inputmode="decimal"></label>
+     <label>经度<input id="longitude" type="number" min="-180" max="180" step="any" inputmode="decimal"></label>
+    </div>
+    <label>案件经过<textarea id="story" rows="5" maxlength="4000" placeholder="填写资料里能确认的经过，按句分行。"></textarea></label>
+    <label>资料链接<textarea id="links" rows="2" maxlength="3200" placeholder="每行一个 URL"></textarea></label>
+    <div class="fields"><label>叙事节奏<select id="pace"><option value="normal">简洁</option><option value="calm">平稳</option></select></label><label>补充要求<input id="requirements" maxlength="800"></label></div>
+    <label class="check"><input type="checkbox" id="rights">我有使用与导出这些素材的权利</label>
+    <label>加入视频、图片或旁白<input id="media" type="file" accept="video/*,image/*,audio/*" multiple></label>
+    <p id="assets" class="muted"></p>
+    <div class="actions"><button class="primary" id="generate">生成可编辑分镜</button><button id="ai" disabled>AI 整理案情</button></div>
+    <p class="muted">规则生成可离线使用。连接私有服务后，可使用已开通的 AI。</p>
+   </section>
+   <section>
+    <h2>资料与事件时间线</h2>
+    <div id="sources"></div><div id="events"></div>
+    <p class="muted">事件时间留空表示待核实。成片时间另按分镜长度计算。</p>
+   </section>
+  </div>
+  <div>
+   <section class="preview">
+    <div class="between"><h2>影片预览</h2><span id="clock">00:00 / 00:00</span></div>
+    <div class="monitor"><canvas id="preview" width="1280" height="720"></canvas></div><div id="geo-preview"></div>
+    <input id="seek" type="range" min="0" max="1" step=".033333" value="0" aria-label="影片时间">
+    <div class="actions"><button class="primary" id="play">播放草稿</button><button id="preview-selected">查看所选镜头</button></div>
+    <p id="status" role="status" aria-live="polite">载入演示或输入案情以开始。</p>
+   </section>
+   <section>
+    <div class="between"><h2>可编辑分镜</h2><button id="add-card">添加文字镜头</button></div>
+    <div id="shots"></div>
+   </section>
+   <section>
+    <h2>审核与导出</h2>
+    <div class="fields"><label>分辨率<select id="resolution"><option value="1920">1080p</option><option value="1280">720p</option></select></label>
+     <label>帧率<select id="fps"><option value="24">24 fps</option><option value="30">30 fps</option><option value="60">60 fps</option></select></label></div>
+    <label class="check"><input type="checkbox" id="reviewed">我已核对事实、画面和素材署名</label>
+    <div class="actions"><button id="save-project" class="primary">下载可编辑项目 ZIP</button><label class="button">导入 JSON / ZIP<input id="import" type="file" accept=".json,.zip" hidden></label></div>
+    <div class="actions"><button id="save-board">分镜 JSON</button><button id="save-events">事件 JSON</button><button id="save-srt">字幕 SRT</button><button id="save-script">旁白稿</button><button id="save-sources">素材出处</button></div>
+    <details><summary>私有渲染 / AI</summary>
+     <label>HTTPS 服务地址<input id="endpoint" type="url" autocomplete="off"></label>
+     <label>访问口令<input id="token" type="password" autocomplete="off"></label>
+     <div class="actions"><button id="connect">连接并验证</button><button id="render" disabled>渲染整片 MP4</button><button id="voice" disabled>生成普通话旁白</button><button id="download-film" hidden>下载 MP4</button></div>
+     <p class="muted">大文件上传到您连接的私有服务。AI 解析仅发送您填写的文字。配音仅发送旁白稿。第三方服务可能计费。</p>
+    </details>
+    <a href="https://github.com/tanghaitian04-debug/casemap-studio/actions/workflows/film.yml" target="_blank" rel="noopener">打开 GitHub Actions 公开素材备用渲染</a>
+    <p class="muted">私有案件和原始录像使用私有服务或交给授权的 Codex 工作环境制作。</p>
+    <div id="pipeline"></div>
+   </section>
+  </div>
+ </div>
+</main>
+<script src="fflate.js"></script><script src="geo.js"></script><script src="project.js"></script><script src="flight.js"></script><script src="motion.js"></script>
+<script src="engine.js"></script><script src="documentary.js"></script><script src="film-pack.js"></script><script src="film-renderer.js"></script>
+<script src="documentary-ui.js"></script>
+</body></html>
