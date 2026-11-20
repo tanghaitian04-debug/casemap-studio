@@ -150,7 +150,7 @@ class Engine {
     const u=clamp(t/intro.duration,0,1);
     const pace=(easing[intro.pace]||smooth)(u);
     this.drawStars();
-    const focus=smooth(clamp((u-.12)/.62,0,1));
+    const focus=smooth(clamp((u-.018)/.68,0,1));
     const advance=clamp(.25*u+.75*pace,0,1);
     const cx=w*(.49+.043*Math.sin(Math.PI*u)*(1-u)),cy=h*(.52+.04*Math.sin(Math.PI*u));
     const radius=h*(.29+1.72*advance**3.3);
@@ -173,7 +173,7 @@ class Engine {
     const longitude=(start+(((end-start+540)%360)-180)*focus)*Math.PI/180;
     const camDistance=1+.028+3.15*(1-advance)**2.6;
     const sinLat=Math.sin(latitude),cosLat=Math.cos(latitude), ray=1/Math.sqrt(camDistance**2-1);
-    const sunX=.68+.08*Math.sin(u*2), sunY=.36, sunZ=.63-.17*u;
+    const sunX=.56+.12*Math.sin(u*2), sunY=.37, sunZ=.74-.17*u;
     const minX=clamp(Math.floor((1-cx/radius)*size*.5)-2,0,size-1);
     const maxX=clamp(Math.ceil((1+(w-cx)/radius)*size*.5)+2,0,size);
     const minY=clamp(Math.floor((1-cy/radius)*size*.5)-2,0,size-1);
@@ -190,10 +190,11 @@ class Engine {
       const sy=clamp(Math.floor((.5-lat/Math.PI)*th),0,th-1), texel=(sy*tw+sx)*4;
       const day=smooth(clamp(.43+(x*sunX+y*sunY+z*sunZ)*.79,0,1));
       const rim=(1-edge)**4*(.2+.8*day);
-      const light=.19+.84*day;
-      dst[index]=src[texel]*light+rim*15;
-      dst[index+1]=src[texel+1]*light+rim*58;
-      dst[index+2]=src[texel+2]*(light+.045)+rim*96;
+      const light=.23+.84*day;
+      const air=day*(1.3-.46*z);
+      dst[index]=src[texel]*light+rim*15+air*3;
+      dst[index+1]=src[texel+1]*light+rim*58+air*14;
+      dst[index+2]=src[texel+2]*(light+.045)+rim*96+air*30;
       dst[index+3]=255*clamp(edge*26,.16,1);
     }
     this.globeCtx.putImageData(buffer,0,0);
@@ -259,7 +260,9 @@ class Engine {
       ctx.beginPath();ctx.arc(x,y,s+Math.sin(u*28)*s*.13,0,2*Math.PI);ctx.stroke();
       ctx.font=`600 ${h*.025}px "Noto Sans CJK SC", sans-serif`;
       ctx.fillStyle='#e6f6ff';ctx.shadowColor='#02090f';ctx.shadowBlur=7;
-      const label=u<.44?'北美洲':u<.59?(intro.state||'北美洲 · 美国'):(intro.city||intro.place);
+      const longitude=intro.end_longitude??-81, latitude=intro.latitude??29;
+      const region=longitude>-169&&longitude<-52&&latitude>0&&latitude<85?'北美洲':'地理定位';
+      const label=u<.44?region:u<.59?(intro.state||region):(intro.city||intro.place);
       ctx.fillText(label,x+s*1.55,y+6,w*.42);
       ctx.restore();
     }
@@ -328,7 +331,15 @@ class Engine {
       ctx.stroke();
     }
   }
-  actorPosition(a,t){return a.route ? Motion.routePosition(a,t) : interp(a.points||[],t,['x','y'],'smooth');}
+  actorPosition(actor,t) {
+    if(!actor.route)return interp(actor.points||[],t,['x','y'],'smooth');
+    let prepared=this.frameRoutes?.get(actor);
+    if(!prepared && this.frameRoutes) {
+      prepared=Motion.prepareRoute(actor);
+      this.frameRoutes.set(actor,prepared);
+    }
+    return Motion.routePosition(actor,t,prepared);
+  }
   drawActor(actor, t) {
     const preview=this.actorPreview?.id===actor.id?this.actorPreview.point:null;
     if (!preview && !Motion.visible(actor,t)) return;
@@ -465,6 +476,7 @@ class Engine {
     if(!this.project)return;
     const {ctx,canvas}=this,p=this.project,t=clamp(time,0,p.duration);
     const intro=p.intro.duration;
+    this.frameRoutes=new Map();
     this.frameView={time:t,camera:this.viewport(t)};
     try {
       ctx.clearRect(0,0,canvas.width,canvas.height);
@@ -477,7 +489,7 @@ class Engine {
       }
       this.drawHUD(t);
       if(options.editor && t>=intro)this.drawGuide(t,options);
-    } finally { this.frameView=null; }
+    } finally { this.frameView=null;this.frameRoutes=null; }
   }
 
 }

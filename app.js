@@ -74,9 +74,8 @@
     }
     writing=false;
   }
-  function persist() {
+  function persist(snapshot=structuredClone(project)) {
     const sequence=++saveSequence, clock=Date.now();
-    const snapshot=structuredClone(project);
     const media=[project.map.image,...project.actors.map(a=>a.avatar||''),...(project.audio||[]).map(a=>a.source)];
     if(media.reduce((n,x)=>n+x.length,0)<2_000_000) {
       try {
@@ -93,10 +92,11 @@
     if(saveSequence>savedSequence){event.preventDefault();event.returnValue='';}
   });
   async function recoverDraft() {
-    const local=format.restore(localStorage);
+    let local=null,clock=0;
+    try {local=format.restore(localStorage);clock=Number(localStorage.getItem(draftKey)||0);} catch {}
     let remote=null;
     try { remote=await window.CaseMapDrafts.read(); } catch {}
-    if(remote && (!local || remote.clock>=Number(localStorage.getItem(draftKey)||0))) {
+    if(remote && (!local || remote.clock>=clock)) {
       try { return format.validate(remote.project); } catch {}
     }
     return local;
@@ -113,7 +113,7 @@
     lastState=structuredClone(project);
     future.length=0;
     historyButtons();
-    persist();
+    persist(lastState);
     tracks();
     motion.sync();
     render();
@@ -134,7 +134,7 @@
     rebuildAudio();
     refresh();
     motion.sync();
-    persist();
+    persist(value);
     render();
   }
   function load(value) {
@@ -434,7 +434,7 @@
       drag.delta=snap(item.t+offset/drag.width*project.duration)-item.t;
       const target=clamp(item.t+drag.delta,0,project.duration);
       marker.style.setProperty('--start',Math.min(99,target/project.duration*100)+'%');
-      marker.setAttribute('aria-label',target.toFixed(2)+' 秒');
+      marker.title=target.toFixed(2)+' 秒';
     });
     marker.addEventListener('click',e=>{
       if(ignoreClick){ignoreClick=false;return;}

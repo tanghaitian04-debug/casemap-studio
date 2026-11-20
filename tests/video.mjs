@@ -2,20 +2,7 @@ import assert from 'node:assert/strict';
 import { execFileSync } from 'node:child_process';
 import { readFile } from 'node:fs/promises';
 
-function verifyFrames(path) {
-  const hashes=execFileSync('ffmpeg',['-v','error','-i',path,'-f','framemd5','-'],{encoding:'utf8'})
-    .split('\n').filter(line=>/^0,/.test(line)).map(line=>line.split(',').at(-1).trim());
-  assert.ok(new Set(hashes).size>=5,'画面内容未随时间变化');
-  const frames=execFileSync('ffmpeg',['-v','error','-i',path,'-vf','scale=32:18,format=gray',
-    '-pix_fmt','gray','-f','rawvideo','-'],{maxBuffer:4_000_000});
-  const pixels=32*18;
-  for (let offset=0;offset<frames.length;offset+=pixels) {
-    const sample=frames.subarray(offset,offset+pixels);
-    const min=Math.min(...sample),max=Math.max(...sample);
-    assert.ok(max-min>25,'检测到黑屏或空白帧');
-  }
-  assert.equal(frames.length/pixels,hashes.length);
-}
+import {verifyFrames} from '../scripts/verify-frames.mjs';
 for (const width of [1280,1920]) {
   const output=`out/verify-${width}.mp4`;
   const args=['scripts/render.mjs','--seconds','1','--width',String(width),'--output',output];

@@ -82,12 +82,13 @@ async function testMotion(browser,mobile) {
   await page.waitForFunction(()=>document.querySelector('#projectTitle').value.includes('松湾市'));
   const openAssets=async()=>{if(mobile)await page.getByRole('button',{name:'项目与对象'}).click();};
   await page.locator('#btnReset').click();
-  await page.locator('#btnAddCar').click();
+  await page.locator('#btnAddPolice').click();
   await page.locator('[data-tool=draw]').click();
   await motionGesture(page,[[.5,.5],[.57,.5],[.64,.51],[.70,.56],[.70,.63],[.66,.70],[.59,.70]]);
   await page.locator('#routeDuration').fill('8');
   await page.locator('#routeApply').click();
   let draft=await exportProject(page);
+  assert.equal(draft.actors[0].vehicle,'police');
   assert.equal(draft.actors[0].points.at(-1).t,8);
   assert.ok(draft.actors[0].points.length>=4);
   const last=draft.actors[0].points.at(-1);
@@ -123,6 +124,17 @@ async function testMotion(browser,mobile) {
   await page.locator('#undo').click();
   assert.ok(Math.abs((await exportProject(page)).actors[1].points.at(-1).x-.60)<.014);
   await page.locator('#redo').click();
+  const marker=page.getByRole('button',{name:'新人物 5.00 秒',exact:true});
+  await marker.scrollIntoViewIfNeeded();
+  const rect=await marker.boundingBox();
+  const width=await marker.evaluate(button=>button.parentElement.getBoundingClientRect().width);
+  const pointer={pointerId:80,pointerType:'touch',button:0,bubbles:true,
+    clientX:rect.x+2,clientY:rect.y+rect.height/2};
+  await marker.dispatchEvent('pointerdown',pointer);
+  await marker.dispatchEvent('pointermove',{...pointer,clientX:pointer.clientX+width/30});
+  await marker.dispatchEvent('pointerup',{...pointer,clientX:pointer.clientX+width/30});
+  assert.deepEqual((await exportProject(page)).actors[1].points.map(p=>p.t),[0,6,10]);
+  await page.locator('#undo').click();
   await page.locator('#scrubber').fill('7');
   await page.locator('[data-tool=pan]').click();
   await touch(page,'pointerdown',[[.4,.45]],61);
@@ -134,6 +146,15 @@ async function testMotion(browser,mobile) {
   await page.locator('#saveView').click();
   draft=await exportProject(page);
   assert.ok(draft.camera.find(p=>p.t===7).zoom>1.5);
+  await openAssets();
+  await page.locator('#mapFile').setInputFiles('assets/demo-map.webp');
+  await page.waitForFunction(()=>document.querySelector('#toast').textContent.includes('地图已导入'));
+  await page.locator('#mapCredit').fill('测试素材署名');
+  const [archive]=await Promise.all([page.waitForEvent('download'),page.locator('#btnProjectZip').click()]);
+  const archivePath=await archive.path();
+  await page.locator('#importFile').setInputFiles({name:'casemap-project.zip',mimeType:'application/zip',buffer:await readFile(archivePath)});
+  await page.waitForFunction(()=>document.querySelector('#toast').textContent==='项目已导入');
+  assert.match((await exportProject(page)).map.image,/^data:image\/jpeg;base64,/);
   const v1=await readFile('examples/demo.json','utf8');
   await page.locator('#importFile').setInputFiles({name:'v1.json',mimeType:'application/json',buffer:Buffer.from(v1)});
   await page.waitForFunction(()=>document.querySelector('#projectTitle').value.includes('松湾市'));

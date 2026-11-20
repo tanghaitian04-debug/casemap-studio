@@ -76,21 +76,31 @@
     const size=Math.min(distance(before,p)*.27,distance(p,after)*.27,.008)*amount*(1-turn(points,i));
     return length ? {x:(after.x-before.x)*size/length,y:(after.y-before.y)*size/length} : {x:0,y:0};
   }
-  function routePosition(actor,t) {
-    const points=sorted(actor.points), amount=actor.route.curve;
+  function prepareRoute(actor) {
+    const points=sorted(actor.points);
+    const amount=actor.route.curve;
+    const handles=points.map((_,i)=>tangent(points,i,amount));
+    return {points,amount,handles};
+  }
+  function routePosition(actor,t,prepared=prepareRoute(actor)) {
+    const {points,amount,handles}=prepared;
     const first=points[0], last=points.at(-1);
     if (!first) return {x:0,y:0};
     if (t<=first.t) return {x:first.x,y:first.y};
     if (t>=last.t) return {x:last.x,y:last.y};
-    const i=points.findIndex(p=>p.t>=t);
-    const a=points[i-1], b=points[i];
+    let low=1, high=points.length-1;
+    while(low<high) {
+      const mid=(low+high)>>1;
+      if(points[mid].t<t)low=mid+1;
+      else high=mid;
+    }
+    const a=points[low-1], b=points[low];
     const u=(easing[b.ease]||easing.linear)(clamp((t-a.t)/(b.t-a.t||.001),0,1));
     const v=1-u;
-    const c=tangent(points,i-1,amount), d=tangent(points,i,amount);
-    // Ease individual long spans normally. Cap tangent offsets in map space to
-    // keep the smoothed path close to the segment, including on narrow corners.
-    return Object.fromEntries(['x','y'].map(k=>[k,clamp(a[k]*v+b[k]*u+
-      3*v*u*(v*c[k]-u*d[k]+(v-u)*(b[k]-a[k])/3*-amount),0,1)]));
+    const c=handles[low-1],d=handles[low];
+    const bridge=amount*v*u*(u-v);
+    const value=k=>clamp(a[k]*v+b[k]*u+3*v*u*(v*c[k]-u*d[k])+bridge*(b[k]-a[k]),0,1);
+    return {x:value('x'),y:value('y')};
   }
   function visible(actor,t) {
     return actor.points.length && t >= (actor.start ?? Math.min(...actor.points.map(p=>p.t))) &&
@@ -114,7 +124,7 @@
     const motion=state.filter(p=>p.motion!==undefined).at(-1)?.motion ?? actor.motion;
     return {angle:fixed===undefined?Math.atan2(dy,dx):fixed*Math.PI/180,moving,motion};
   }
-  const api={distance,compact,schedule,put,routePosition,visible,heading,sorted};
+  const api={distance,compact,schedule,put,prepareRoute,routePosition,visible,heading,sorted};
   if (typeof module==='object') module.exports=api;
   else root.CaseMapMotion=api;
 })(globalThis);

@@ -46,7 +46,7 @@ jobs:
       - name: Render and validate H.264
         env:
           PROJECT_PATH: ${{ inputs.project_path || 'examples/demo.json' }}
-          RENDER_WIDTH: ${{ inputs.resolution }}
+          RENDER_WIDTH: ${{ inputs.resolution || (github.event_name == 'push' && '1920') || '' }}
           RENDER_FPS: ${{ inputs.fps }}
           RENDER_SECONDS: ${{ inputs.seconds }}
           RENDER_NAME: ${{ inputs.filename }}
@@ -57,6 +57,8 @@ jobs:
           if [[ -n "$RENDER_SECONDS" ]]; then args+=(--seconds "$RENDER_SECONDS"); fi
           if [[ -n "$RENDER_NAME" ]]; then args+=(--filename "$RENDER_NAME"); fi
           npm run render -- "${args[@]}"
+      - name: Confirm every frame has image content
+        run: node scripts/verify-frames.mjs output/*.mp4
       - name: Upload verified MP4 and ffprobe report
         uses: actions/upload-artifact@v4
         with:
