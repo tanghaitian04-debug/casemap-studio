@@ -1,0 +1,10 @@
+[
+  {"id":"A","at":0,"end":15,"title":"首次接触","en":"FIRST CONTACT","label":"警方发现已知有在逃令的人员","detail":"警方随后展开徒步追赶。","state":"COPA 初步通报 · 追捕报告 1","map":"overview"},
+  {"id":"B","at":15,"end":29,"title":"后巷追赶","en":"ALLEY","label":"Williams 与警员先后经过后巷","detail":"执法记录仪可见沿巷排列的垃圾箱。","state":"BWC 1 · 位置关系示意","map":"alley"},
+  {"id":"C","at":29,"end":43,"title":"State Street 便利店","en":"7-ELEVEN","label":"Williams 进入附近便利店","detail":"店址资料列为 451 N State St。","state":"店内监控 · 门店官网","map":"store"},
+  {"id":"D","at":43,"end":54,"title":"街面电击","en":"STREET LEVEL","label":"警方在枪击前曾使用电击设备","detail":"现场动作按原始画面可辨范围呈现。","state":"COPA · POD 1 · 第三方录像","map":"street"},
+  {"id":"E","at":54,"end":67,"title":"进入酒店","en":"COURTYARD BY MARRIOTT","label":"追赶转入 Courtyard 酒店","detail":"30 E Hubbard St · 芝加哥 River North","state":"BWC 2 · CPD 案件报告","map":"hotel"},
+  {"id":"F","at":67,"end":87,"title":"酒店电梯区","en":"ELEVATOR AREA","label":"警员在电梯外喊话","detail":"Williams 起初位于电梯内。","state":"BWC 1 / 2 · 非按比例抽象示意","map":"inside"},
+  {"id":"G","at":87,"end":99,"title":"最后关键数秒","en":"CRITICAL SEQUENCE","label":"电击设备使用后，两名警员开枪","detail":"Williams 随后倒回电梯区域。","state":"BWC 2 · COPA 初步通报","map":"sequence"},
+  {"id":"H","at":99,"end":116,"title":"现场救助","en":"AFTER THE SHOOTING","label":"警员在电梯区实施救助","detail":"Williams 随后被送往医院。","state":"BWC 2 / 15 · CPD 案件报告","map":"after"}
+]

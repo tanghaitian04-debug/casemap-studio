@@ -1,0 +1,25 @@
+scene_id,source_url,source_file,source_timecode,verified_action,map_coordinate,verification_status
+A,https://www.chicagocopa.org/press/copa-releases-video-other-materials-from-officer-involved-shooting-near-30-e-hubbard-st/,COPA release 2026-10-01,paragraph 4,警方发现已知有在逃令的人员后展开追赶,,官方初步通报
+A,https://www.chicagocopa.org/wp-content/uploads/2025/05/westerfield_foot_pursuit_report-ok.pdf,Foot Pursuit Report 1,p1,该警员报告写明追捕起点 54 W Hubbard St,"41.89009291,-87.62993000",报告地址＋Census 道路门牌插值／非首次接触点
+A,https://vimeo.com/1231780850,BWC 1,03:30–03:52,警员出大楼后追赶,,原始录像直接可见／楼内具体会面点未定
+B,https://vimeo.com/1231780850,BWC 1,04:02–04:54,双方依次通过后巷且两侧可见垃圾箱,,原始录像直接可见／具体位置不落点
+B,https://vimeo.com/1231779672,3rd Party 14,00:35–00:49,一人沿巷跑离多名警员跟进／COPA 将此片列为有枪击前电击,,原始录像直接可见＋官方目录／设备瞬间不逐次定点
+C,https://vimeo.com/1231779978,3rd Party 8,00:08–00:20,店内可见人员跑过及警员跟入,,原始录像直接可见／离店门未定
+C,https://vimeo.com/1231780850,BWC 1,05:14–05:26 / 06:25–06:32,记录仪先后经过便利店临街门及店内,,原始录像直接可见／当事人离店路线未定
+C,https://www.7-eleven.com/locations/il/chicago/451-n-state-33908,7-Eleven store 33908,地址字段,门店列为 451 N State St；445 门牌未作为门店坐标,"41.8906720,-87.6278621",官网与市记录一致／店铺地图点来自 OSM
+D,https://vimeo.com/1231780071,POD 1,目录与街面镜头,官方将其列为拍到枪击前的电击设备使用,,官方目录确认＋原始录像复看／未逐次定位
+D,https://vimeo.com/1231828406,3rd Party 18,05:10–06:10 范围,第三方临街镜头显示人员经过及警员活动,,原始录像可见街面活动／事件点与探针结果未定位
+D,https://www.chicagocopa.org/wp-content/uploads/2025/05/Dinanno-TRR.Redacted.pdf,Tactical Response Report 3,p1,警员报告将事件地点描述为酒店附近后侧及大厅电梯区,,报告记载／不据此拆分施放结果
+E,https://www.marriott.com/en-us/hotels/chiwb-courtyard-chicago-downtown-river-north/overview/,Marriott CHIWB,公开地图元数据,30 E Hubbard St；官网提供店址地图点,"41.8900730,-87.6272840",酒店官网点／成片建筑体块中心用 OSM
+E,https://www.openstreetmap.org/node/2721192348,OSM hotel POI,地理数据,酒店建筑内地图点,"41.8902851,-87.6276552",OSM 并对照酒店地址／非入口点
+E,https://vimeo.com/1231781017,BWC 2,02:38–03:00,警员沿侧街及有顶入口进入酒店大堂前往电梯,,原始录像直接可见／室外路径和精确入口未地理配准
+E,https://vimeo.com/1231828191,3rd Party 19,00:00–00:18,酒店大堂内可见人员与后续警员移动,,原始录像直接可见／未自动串成全路线
+F,https://vimeo.com/1231780850,BWC 1,07:25–08:55,警员在电梯外调整位置／当事人一度留在电梯内,,原始录像直接可见／抽象示意
+F,https://vimeo.com/1231781017,BWC 2,03:00–04:24,电梯外警员多次喊话,,原始录像直接可见／抽象示意
+G,https://vimeo.com/1231781017,BWC 2,约04:25.8–04:28.5,电梯门打开；Williams 到门口外；随后枪响并回倒入电梯,,原始录像直接可见／单一设备片内相对时间
+G,https://vimeo.com/1231780850,BWC 1,约08:55.7–09:00,不同机位可见门打开、警员持电击设备、Williams 转回并倒地,,原始录像直接可见／对照顺序未对齐绝对时钟
+G,https://www.chicagocopa.org/press/copa-releases-video-other-materials-from-officer-involved-shooting-near-30-e-hubbard-st/,COPA release 2026-10-01,paragraph 4–5,初步说明描述先有电击设备使用及两名警员开枪,,官方初步通报／不呈现弹道或逐发次数
+H,https://vimeo.com/1231780850,BWC 1,约09:00–09:40,警员在电梯门口接触伤者并移出电梯,,原始录像直接可见／位置关系为抽象示意
+H,https://vimeo.com/1231781017,BWC 2,04:43–05:10,多人聚集在电梯附近开展救助,,原始录像直接可见
+H,https://vimeo.com/1231780526,BWC 15,03:45–05:00,警员及救援人员在酒店内活动,,原始录像直接可见
+H,https://www.chicagocopa.org/wp-content/uploads/2025/05/jj209442_-_ocir.Redacted.pdf,CPD Incident Report JJ209442,p1–2,第一救助由警方和消防提供／伤者送医,"41.8902851,-87.6276552",官方报告／坐标为酒店地图点
