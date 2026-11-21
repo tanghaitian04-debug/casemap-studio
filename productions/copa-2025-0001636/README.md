@@ -2,7 +2,7 @@
 
 - `Chicago_Geographic_Location.mp4` 32 秒
 - `Hubbard_Case_2D_Reconstruction.mp4` 116 秒
-- 两条均为无声 1920×1080、30 FPS、H.264、yuv420p，MP4 索引前置。
+- 两条均为无声 1920×1080、30 FPS、H.264、yuv420p，MP4 索引前置。Cesium 三维图层在云端以 1280×720 渲染，字幕、标注与最终视频画布为 1920×1080。
 
 ## 素材与定位
 
@@ -36,9 +36,9 @@ npm ci
 npx playwright install --with-deps chromium --only-shell
 python scripts/prepare_assets.py
 node scripts/render.mjs geo --preview
-node scripts/render.mjs reconstruction --preview
+CASEMAP_NATIVE_2D=1 node scripts/render.mjs reconstruction --preview
 node scripts/render.mjs geo
-node scripts/render.mjs reconstruction
+CASEMAP_NATIVE_2D=1 node scripts/render.mjs reconstruction
 bash scripts/qa.sh geo
 bash scripts/qa.sh reconstruction
 ```

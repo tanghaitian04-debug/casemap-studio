@@ -16,6 +16,8 @@ jobs:
       fail-fast: false
       matrix:
         mode: [geo, reconstruction]
+    env:
+      CASEMAP_NATIVE_2D: ${{ matrix.mode == 'reconstruction' && '1' || '0' }}
     defaults:
       run:
         working-directory: productions/copa-2025-0001636
@@ -32,7 +34,7 @@ jobs:
           sudo apt-get install -y ffmpeg fonts-noto-cjk
           pip install 'Pillow==12.0.0' 'numpy==2.3.5'
           npm ci
-          npx playwright install --with-deps chromium --only-shell
+          if [ "${{ matrix.mode }}" = "geo" ]; then npx playwright install --with-deps chromium --only-shell; fi
       - run: python scripts/prepare_assets.py
       - run: npm run render -- ${{ matrix.mode }} --preview
       - run: npm run render -- ${{ matrix.mode }}

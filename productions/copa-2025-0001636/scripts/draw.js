@@ -30,9 +30,11 @@ export function compass(x=1810,y=103){
   arrow(x,y+14,x,y-15,color.ink,[],2,10);text('N',x,y+55,20,color.ink,700,'center');
 }
 export function image(url){
+  if(globalThis.readFilmImage)return globalThis.readFilmImage(url);
   const a=new Image();a.src=url;return a.decode().then(()=>a);
 }
 export async function json(url){
+  if(globalThis.readFilmJSON)return globalThis.readFilmJSON(url);
   const res=await fetch(url);if(!res.ok)throw Error('Missing '+url);return res.json();
 }
 export function gradient(x1,y1,x2,y2,stops){
