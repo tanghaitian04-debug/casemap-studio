@@ -66,7 +66,7 @@ export async function setup(){
   });
   C=window.Cesium;
   widget=new C.CesiumWidget(document.querySelector('#globe'),{
-    baseLayer:false,useDefaultRenderLoop:false,skyBox:false,scene3DOnly:true,msaaSamples:1,
+    baseLayer:false,useDefaultRenderLoop:false,skyBox:false,scene3DOnly:true,msaaSamples:1,orderIndependentTranslucency:false,
     terrainProvider:new C.EllipsoidTerrainProvider(),
     contextOptions:{webgl:{alpha:true,preserveDrawingBuffer:true,antialias:false}}
   });
@@ -105,7 +105,10 @@ function title(t){
     g.restore();
   }
 }
-function project(lon,lat,height=0){return C.SceneTransforms.worldToWindowCoordinates(scene,C.Cartesian3.fromDegrees(lon,lat,height));}
+function project(lon,lat,height=0){
+  const point=C.SceneTransforms.worldToWindowCoordinates(scene,C.Cartesian3.fromDegrees(lon,lat,height));
+  return point&&{x:point.x*W/scene.canvas.clientWidth,y:point.y*H/scene.canvas.clientHeight};
+}
 function road(lon,lat,name){
   const p=project(lon,lat);if(!p||p.x<310||p.x>1680||p.y<120||p.y>760)return;
   g.font='700 21px Film';const m=g.measureText(name).width;

@@ -13,6 +13,7 @@ D,https://www.chicagocopa.org/wp-content/uploads/2025/05/Dinanno-TRR.Redacted.pd
 E,https://www.marriott.com/en-us/hotels/chiwb-courtyard-chicago-downtown-river-north/overview/,Marriott CHIWB,公开地图元数据,30 E Hubbard St；官网提供店址地图点,"41.8900730,-87.6272840",酒店官网点／成片建筑体块中心用 OSM
 E,https://www.openstreetmap.org/node/2721192348,OSM hotel POI,地理数据,酒店建筑内地图点,"41.8902851,-87.6276552",OSM 并对照酒店地址／非入口点
 E,https://vimeo.com/1231781017,BWC 2,02:38–03:00,警员沿侧街及有顶入口进入酒店大堂前往电梯,,原始录像直接可见／室外路径和精确入口未地理配准
+E,https://vimeo.com/1231780850,BWC 1,07:11–07:20,Williams 与警员先后进入有顶通道及玻璃门一侧,,原始录像直接可见／完整路线未做坐标配准
 E,https://vimeo.com/1231828191,3rd Party 19,00:00–00:18,酒店大堂内可见人员与后续警员移动,,原始录像直接可见／未自动串成全路线
 F,https://vimeo.com/1231780850,BWC 1,07:25–08:55,警员在电梯外调整位置／当事人一度留在电梯内,,原始录像直接可见／抽象示意
 F,https://vimeo.com/1231781017,BWC 2,03:00–04:24,电梯外警员多次喊话,,原始录像直接可见／抽象示意

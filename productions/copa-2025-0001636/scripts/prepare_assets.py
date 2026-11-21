@@ -96,7 +96,15 @@ def models():
             continue
         if attr.get("highway") in {"primary","secondary","tertiary","residential","unclassified","living_street"} and attr.get("name"):
             roads.append({"name":attr["name"],"points":ring})
-        if len(ring)<4 or ring[0]!=ring[-1] or not attr.get("building") or attr["building"]=="no":
+        building=attr.get("building")
+        part=attr.get("building:part")
+        if len(ring)<4 or ring[0]!=ring[-1] or not (building or part) or building=="no":
+            continue
+        # OSM maps Plaza 440 and the low wing in a shared outline with two explicit parts.
+        # Suppress the whole-block extrusion so the residential tower doesn't become the hotel.
+        if way.attrib["id"]=="153291615":
+            continue
+        if part and way.attrib["id"] not in {"686333245","686333248"}:
             continue
         if min(abs(p[0]-hotel[0]) for p in ring)>0.0042 or min(abs(p[1]-hotel[1]) for p in ring)>0.0031:
             continue

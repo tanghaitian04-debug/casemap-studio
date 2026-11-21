@@ -6,7 +6,7 @@
 
 ## 素材与定位
 
-地球使用 NASA Goddard Blue Marble Next Generation（2004 年 4 月）。芝加哥区域和街区使用 USDA NAIP / USGS The National Map 正射航拍。湖面空白拼片做了颜色补缀和色调衔接。航拍是地理背景，与案发画面无关。地标、道路及建筑轮廓来自 © OpenStreetMap contributors，依 ODbL 提供，参见 https://www.openstreetmap.org/copyright 。建筑为轮廓拉伸体，使用 OSM 现有高度或按层数换算的近似高度。酒店官网点与 OSM 酒店楼体标记位置不同，建筑标记使用楼体内 OSM 点。在酒店上方回到正射图以衔接下一镜。
+地球使用 NASA Goddard Blue Marble Next Generation（2004 年 4 月）。芝加哥区域和街区使用 USDA NAIP / USGS The National Map 正射航拍。湖面空白拼片做了颜色补缀和色调衔接。航拍是地理背景，与案发画面无关。地标、道路及建筑轮廓来自 © OpenStreetMap contributors，依 ODbL 提供，参见 https://www.openstreetmap.org/copyright 。建筑为轮廓拉伸体，使用 OSM 现有高度或按层数换算的近似高度。酒店官网点与 OSM 酒店楼体标记位置不同，建筑标记使用楼体内 OSM 点。Plaza 440 的住宅塔楼与酒店所在的较低楼体使用 OSM 分开标注的建筑部件。在酒店上方回到正射图以衔接下一镜。
 
 - NASA 资源与使用说明见 https://svs.gsfc.nasa.gov/12564/ 和 https://www.nasa.gov/nasa-brand-center/images-and-media/
 - USDA NAIP 公有领域底图见 https://imagery.nationalmap.gov/arcgis/rest/services/USGSNAIPImagery/ImageServer
